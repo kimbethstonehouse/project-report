@@ -1,0 +1,200 @@
+
+% to choose your degree
+% please un-comment just one of the following
+\documentclass[bsc,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}     % for BSc, BEng etc.
+% \documentclass[minf,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}  % for MInf
+
+\begin{document}
+
+\title{Multicore Processing Support for InfOS}
+
+\author{Kimberley Stonehouse}
+
+% to choose your course
+% please un-comment just one of the following
+% \course{Artificial Intelligence and Computer Science}
+%\course{Artificial Intelligence and Software Engineering}
+%\course{Artificial Intelligence and Mathematics}
+%\course{Artificial Intelligence and Psychology }   
+%\course{Artificial Intelligence with Psychology }   
+%\course{Linguistics and Artificial Intelligence}    
+\course{Computer Science}
+%\course{Software Engineering}
+%\course{Computer Science and Electronics}    
+%\course{Electronics and Software Engineering}    
+%\course{Computer Science and Management Science}    
+%\course{Computer Science and Mathematics}
+%\course{Computer Science and Physics}  
+%\course{Computer Science and Statistics}    
+
+% to choose your report type
+% please un-comment just one of the following
+%\project{Undergraduate Dissertation} % CS&E, E&SE, AI&L
+%\project{Undergraduate Thesis} % AI%Psy
+\project{4th Year Project Report}
+
+\date{\today}
+
+\abstract{
+This is an example of {\tt infthesis} style.
+The file {\tt skeleton.tex} generates this document and can be 
+used to get a ``skeleton'' for your thesis.
+The abstract should summarise your report and fit in the space on the 
+first page.
+%
+You may, of course, use any other software to write your report,
+as long as you follow the same style. That means: producing a title
+page as given here, and including a table of contents and bibliography.
+}
+
+\maketitle
+
+\section*{Acknowledgements}
+Acknowledgements go here. 
+
+\tableofcontents
+
+%\pagenumbering{arabic}
+
+
+\chapter{Introduction}
+
+The document structure should include:
+\begin{itemize}
+\item
+The title page  in the format used above.
+\item
+An optional acknowledgements page.
+\item
+The table of contents.
+\item
+The report text divided into chapters as appropriate.
+\item
+The bibliography.
+\end{itemize}
+
+Commands for generating the title page appear in the skeleton file and
+are self explanatory.
+The file also includes commands to choose your report type (project
+report, thesis or dissertation) and degree.
+These will be placed in the appropriate place in the title page. 
+
+The default behaviour of the documentclass is to produce documents typeset in
+12 point.  Regardless of the formatting system you use, 
+it is recommended that you submit your thesis printed (or copied) 
+double sided.
+
+The report should be printed single-spaced.
+It should be 30 to 60 pages long, and preferably no shorter than 20 pages.
+Appendices are in addition to this and you should place detail
+here which may be too much or not strictly necessary when reading the relevant section.
+
+\section{Using Sections}
+
+Divide your chapters into sub-parts as appropriate.
+
+\section{Citations}
+
+Note that citations 
+(like \cite{P1} or \cite{P2})
+can be generated using {\tt BibTeX} or by using the
+{\tt thebibliography} environment. This makes sure that the
+table of contents includes an entry for the bibliography.
+Of course you may use any other method as well.
+
+\section{Options}
+
+There are various documentclass options, see the documentation.  Here we are
+using an option ({\tt bsc} or {\tt minf}) to choose the degree type, plus:
+\begin{itemize}
+\item {\tt frontabs} (recommended) to put the abstract on the front page;
+\item {\tt twoside} (recommended) to format for two-sided printing, with
+  each chapter starting on a right-hand page;
+\item {\tt singlespacing} (required) for single-spaced formating; and
+\item {\tt parskip} (a matter of taste) which alters the paragraph formatting so that
+paragraphs are separated by a vertical space, and there is no
+indentation at the start of each paragraph.
+\end{itemize}
+
+\chapter{Background}
+
+\section{Motivation}
+% What led to the development of multicore processing?
+Moore’s Law predicts that the number of transistors per integrated circuit doubles roughly every two years \cite{moore_1998} \cite{moore_2006}. For decades, Moore’s Law scaling has correctly predicted exponential advancements in computing performance, which has set a precedent. However, this doubling cannot go on forever, and Moore’s law is coming to an end \cite{DBLP:journals/cse/TheisW17}. Still, our expectations have been set, and so the computing industry has begun to look to new ways of improving computing performance. This has ultimately introduced two key issues.
+
+\subsection{The Power Wall}
+In a processor, the operations performed are governed by a system clock, with each operation beginning on a pulse of the clock. These operations may include fetching an instruction, decoding an instruction or performing an arithmetic operation. It follows that fundamentally, the speed of the processor is determined by the speed of the clock, so historically chip manufacturers have improved performance by increasing the clock speed.
+
+In part, increasing the clock speed was made possible by Dennard scaling \cite{dennard_1999}, which suggested that as transistors get smaller, the power density stays constant. This allowed circuits to operate at higher frequencies, but at the same power level. However, this scaling rule ignored transistor leakage, which aggregates with a growing number of increasingly small transistors and drives up power consumption \cite{bohr_2007}.
+
+This breakdown of Dennard scaling means that increasing the clock speed will increase the power consumption, which is problematic. As an example, the digital workload of mobile phones increases by an order of magnitude by every 5 years, demanding performance improvement. However, the dominant constraining factor is the limited available battery power \cite{berkel_2009}. In larger applications such as servers and data centres, the dominant constraining factor becomes running costs, which are driven up by excessive power consumption. The breakdown of Dennard scaling has effectively defined a “power wall” \cite{patterson-hennessy}. Power consumption has become a limiting factor, and the trend described above of ever-increasing clock speeds is unsustainable \cite{blake_2009}.
+
+\subsection{Performance Growth}
+Performance can also be improved by increasing the logic complexity on the chip. For example, superscalar processors are used to implement instruction-level parallelism to improve performance. That is, they contain multiple instances of execution units such as the ALU. Each execution unit is not a separate processor, but simply an additional resource of the existing processor. This allows for multiple instructions to be executed in parallel within the same processor, increasing throughput \cite{stallings}. 
+
+However, there are diminishing returns here: Pollack’s rule states that the performance increase delivered by microarchitectural improvements is roughly proportional to the square root of the increase in logic complexity \cite{borkar_2007}. In other words, doubling the logic in the processor will result in roughly a 40\% increase in performance. To illustrate this fact, we can look at the trend of yearly chip performance improvement. In the 1990s, chip performance was improving by 60\% each year, but this slowed to 40\% each year between 2000 to 2004, and slowed again to 20\% in 2004 \cite{geer_2005}. Clearly, increasing the complexity of processor designs is a poor investment.
+
+\section{Multicore Processing}
+% What is multicore processing?
+A mulitcore architecture can address the two key issues discussed above. A multicore processor has two or more processing units, called cores, on the same chip. Different to superscalar processors, each core has all the components of an independent processor, including registers, control unit, arithmetic logic unit, instruction pipeline and private L1 cache. The cores also have access to a shared L2 cache, and increasingly, a shared L3 cache. Each core appears to the operating system as a separate processor. 
+
+Performance growth can then come from increasing the number of cores rather than the clock speed. Using multiple cores rather than one increasingly powerful core has a slower growth in power consumption \cite{blake_2009}. In the case of mobile phones, the solution has to be multicore \cite{berkel_2009}. Furthermore, a multicore architecture has the potential to provide near linear performance improvement with complexity. Two smaller processor cores, instead of a large monolithic processor core, can potentially provide 70-80\% more performance, as compared to the 40\% mentioned previously \cite{borkar_2007}.
+
+Chip manufacturers soon turned to multicore. In 2001, IBM released the POWER4, the industry’s first server chip with two cores \cite{power4}. In 2005, AMD announced the first dual-core Opteron, their server processor. A month later came the Athlon 64 X2, AMD’s first desktop dual-core processor. Today, the multicore trend shows no signs of slowing down. The Fujitsu A64FX has 48 cores and powers the Fugaku supercomputer, which is the fastest supercomputer in the world as of June 2020. The Sunway TaihuLight supercomputer has 256 cores per processor chip, amounting to over 10 million cores across the entire system. However, despite being prevalent, multicore processing presents a number of challenges.
+
+\subsection{Multicore Challenges}
+Before discussing multicore challenges, it is important to define some technical concepts. An instruction set architecture (ISA) is an abstract model of a computer that defines the type of instructions to be supported by the processor. Examples include x86, ARM, RISC-V and MIPS. A microarchitecture is the design of a particular processor, which implements a specific ISA. Processors may have different microarchitectures, but share a common ISA. For example, the AMD Athlon and the Intel Core processors have entirely different designs, but both implement the x86 ISA.
+
+The ISA will sometimes present a multiple processor (MP) protocol, which defines how the cores interact with one another. However, this is not always the case, and notably the MIPS and RISC-V ISAs do not have mature MP protocols \textit{(todo: is this really true?).} This shifts the decision about core interaction onto the operating system designer, and adds complexity to design and development of the operating system. 
+
+\textit{todo: Add information about other ISAs MP standards - having trouble finding much information about ARM's...}
+
+InfOS (section \ref{InfOS}) implements the x86 ISA, which does define a multiple-processor (MP) initialisation protocol called the Multiprocessor Specification Version 1.4 \cite{intel-sys-prog-guide}. The protocol defines two classes of processors: the bootstrap processor (BSP) and application processors (APs). If one core requires action from another core, it can send a special type of interrupt, called an inter-processor interrupt (IPI). When the MP system is powered on, the system hardware dynamically selects one of the processors as the BSP, and the remaining processors are identified as APs. The BSP executes the BIOS’s bootstrap code and then the operating-system initialisation code, while the APs wait for a sequence of IPIs from the BSP processor. The sequence, called an INIT-SIPI-SIPI sequence, consists of one init IPI followed by two startup IPIs, with delays throughout to allow the APs time to respond.
+
+\subsubsection{Scalability} \label{scalability}
+Another challenge is fully exploiting the performance improvements offered by multicore architectures. Amdahl’s law \cite{DBLP:conf/afips/Amdahl67} \cite{DBLP:journals/computer/Amdahl13} states that the potential speedup to be gained by using multiple processors is bounded by the amount of program code that is inherently sequential. That is, to fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment. Since much software contains a substantial amount of sequential code, and because communication and distribution of work to multiple cores often incurs a significant overhead, this may lead to the rather pessimistic view that an investment in multicore processing is not worth the returns.
+
+However, Amdahl’s law assumes that the problem size is fixed and independent of the number of processors. Rather, Gustafson’s law tells us that the problem size scales with the number of processors \cite{DBLP:journals/cacm/Gustafson88}, leading to a linear scaling in speedup. This means that the true performance of a large multicore architecture can be fully exploited with a large parallel problem. There are, in fact, numerous applications where it is possible to effectively exploit multicore systems. Database management systems and database applications are one such application \cite{DBLP:journals/queue/McDougall05}. Another is Java applications \cite{DBLP:journals/usenix-login/McDougallL06}. Furthermore, computing presents a large number of embarrassingly parallel problems \cite{DBLP:books/daglib/0020056}, which naturally lend themselves to being solved in parallel. Examples include the Mandelbrot set, Monte Carlo algorithms \cite{DBLP:conf/uai/NeiswangerWX14} and searches in constraint problems \cite{DBLP:journals/jair/MalapertRR16}. In this project, we will benchmark and evaluate the system’s performance on such a problem.
+
+\subsubsection{Architecture} \label{architecture}
+Even with a multiple processor standard, there still remains the issue of how to organise multiple cores. A homogeneous architecture consists of a number of processing cores of the same design, capability and ISA, whereas a heterogeneous architecture consists of processing cores of different capabilities and perhaps different ISAs.
+
+As discussed in section \ref{scalability}, to fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment. However, heterogeneous architectures can offer a solution. The programmer's effort to parallelise the program can be reduced if the underlying architecture promises faster execution of the serial part of an application \cite{suleman_2007}. Consider, for example, a system with many simple cores to provide high parallelisation, and a few complex cores to ensure high serial performance too \cite{balakrishnan_2005}. 
+
+Core diversity can also offer a greater ability to adapt to the demands of different applications, and running each application on the most appropriate core can increase energy efficiency \cite{kumar_2003}. 
+
+In the case of a homogeneous architecture, the operating system and application design remain relatively simple. While the benefits of heterogeneous architectures can clearly be seen, they complicate matters for the operating system designer. How should the scheduler select which core to run each task on?
+
+\textit{todo: expand this further}
+
+\subsubsection{Scheduling}
+\textit{todo: Perhaps discuss scheduling issues, load balancing, processor affinity, etc
+}
+\subsubsection{Concurrency and memory}
+\textit{todo: Perhaps discuss cache coherence, memory consistency, race conditions, locking, etc
+}
+\section{InfOS} \label{InfOS}
+% What is InfOS?
+\textit{Note: Some of this, like project goals and challenges to consider, will inevitably be moved into the Introduction section when written, but they can stay here for now.}
+
+InfOS \cite{infos} is a research operating system, designed and developed by Tom Spink. It is based on the x86 architecture, and is written entirely from scratch in C++, following object oriented principles. It was written for the UG3 Operating Systems course \cite{ug3os}, although it is technically a general purpose operating system.
+
+InfOS is a valuable teaching tool that forms the foundations of the Operating Systems coursework. It was developed because modern operating system kernels are extremely complex, and are not easy to understand. InfOS provides interfaces for core operating system operations, such as the scheduler and memory allocator, and allows these to be specified at compile-time via command line arguments. Students can then, for example, implement different memory allocation algorithms, and select which to load at compile-time.
+
+InfOS currently only supports single core processing. However, as discussed, multicore processing is a very prevalent field, and forms a large part of the theory covered in the Operating Systems course. The objective of this project is to develop InfOS further as a teaching tool by adding multicore processing support. This presents a number of challenges, discussed in the next section.
+
+\subsection{Challenges}
+\subsubsection{Modelling Cores}
+There is currently no way to model or represent cores in InfOS. It only recognises one CPU, so data structures will need to be designed to represent the individual cores.
+\subsubsection{Scheduling}
+The scheduler only supports dispatching tasks to run on one core, so will need to be modified to schedule tasks to run on multiple different cores. Once the scheduler is able to dispatch tasks onto multiple cores, there is the issue of load balancing to consider. This involves ensuring that no one processor is executing many tasks, while others sit idle.
+
+\subsubsection{Locking}
+As previously mentioned, to effectively utilise multiple cores, the operating system needs to support multithreading. InfOS does already support single-core multithreading, but care needs to be taken around the issue of concurrency when running multiple threads on multiple cores. For instance, if two threads were running on separate cores and both simultaneously attempted to access the same memory location, there would be a race condition on that memory location and unexpected results would follow. Locking primitives such as mutex locks and semaphores can be used to ensure data integrity, but these must be designed and planned. s
+
+% use the following and \cite{} as above if you use BibTeX
+% otherwise generate bibtem entries
+\bibliographystyle{plain}
+\bibliography{mybibfile}
+
+\end{document}
