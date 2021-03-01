@@ -1,8 +1,14 @@
-
 % to choose your degree
 % please un-comment just one of the following
 \documentclass[bsc,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}     % for BSc, BEng etc.
 % \documentclass[minf,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}  % for MInf
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{booktabs, multirow} % for borders and merged ranges
+\usepackage{soul}% for underlines
+\usepackage[table]{xcolor} % for cell colors
+\usepackage{changepage,threeparttable} % for wide tables
+\graphicspath{ {./figures/} }
 
 \begin{document}
 
@@ -116,54 +122,62 @@ paragraphs are separated by a vertical space, and there is no
 indentation at the start of each paragraph.
 \end{itemize}
 
-\chapter{Background}
+\chapter{Motivation}
 
-\section{Motivation}
+% \section{Motivation} \label{motivation}
+\section{Unicore Limitations} \label{unicore-limitations}
 % What led to the development of multicore processing?
 Moore’s Law predicts that the number of transistors per integrated circuit doubles roughly every two years \cite{moore_1998} \cite{moore_2006}. For decades, Moore’s Law scaling has correctly predicted exponential advancements in computing performance, which has set a precedent. However, this doubling cannot go on forever, and Moore’s law is coming to an end \cite{DBLP:journals/cse/TheisW17}. Still, our expectations have been set, and so the computing industry has begun to look to new ways of improving computing performance. This has ultimately introduced two key issues.
 
-\subsection{The Power Wall}
-In a processor, the operations performed are governed by a system clock, with each operation beginning on a pulse of the clock. These operations may include fetching an instruction, decoding an instruction or performing an arithmetic operation. It follows that fundamentally, the speed of the processor is determined by the speed of the clock, so chip manufacturers have historically improved performance by increasing the clock speed.
+\subsection{The Power Wall} \label{the-power-wall}
+In a processor, the operations performed are governed by a system clock, with each operation beginning on a pulse of the clock. These operations may include fetching an instruction, decoding an instruction or performing an arithmetic operation. It follows that fundamentally, the speed of the processor is determined by the speed of the clock, so chip manufacturers have historically improved performance by increasing the clock speed \cite{stallings}.
 
 In part, increasing the clock speed was made possible by Dennard scaling \cite{dennard_1999}, which suggests that as transistors get smaller, their power density stays constant, so that power use stays in proportion with the chip's area. This should have allowed circuits to operate at higher frequencies without increasing the power usage. However, this scaling rule ignored transistor leakage, which aggregates with a growing number of increasingly small transistors and drives up power consumption \cite{bohr_2007}.
 
 This breakdown of Dennard scaling meant that increasing performance in this manner demands an increase in power, which is problematic. As an example, the digital workload of mobile phones increases by an order of magnitude by every 5 years, demanding performance improvement. However, the dominant constraining factor is the limited available battery power \cite{berkel_2009}. In larger applications such as servers and data centres, the dominant constraining factor becomes running costs, which are driven up by excessive power consumption. The breakdown of Dennard scaling has effectively defined a “power wall” \cite{patterson-hennessy}. Power consumption has become a limiting factor, and the trend described above of ever-increasing clock speeds is unsustainable \cite{blake_2009}.
 
-\subsection{Performance Growth}
-Performance can also be improved by increasing the logic complexity on the chip. For example, superscalar processors are used to implement instruction-level parallelism to improve performance. That is, they contain multiple instances of execution units such as the ALU. Each execution unit is not a separate processor, but simply an additional resource of the existing processor. This allows for multiple instructions to be executed in parallel within the same processor, increasing throughput \cite{stallings}. 
+\subsection{Performance Growth} \label{performance-growth}
+Performance can also be improved by increasing the logic complexity on the chip. For example, superscalar processors are used to implement instruction-level parallelism to improve performance. That is, they contain multiple instances of execution units such as the ALU. Each execution unit is not a separate processor, but simply an additional resource of the existing processor. This allows for multiple instructions to be executed in parallel within the same processor, increasing throughput \cite{stallings}.
 
 However, there are diminishing returns here: Pollack’s rule states that the performance increase delivered by microarchitectural improvements is roughly proportional to the square root of the increase in logic complexity \cite{borkar_2007}. In other words, doubling the logic in the processor will result in roughly a 40\% increase in performance. To illustrate this fact, we can look at the trend of yearly chip performance improvement. In the 1990s, chip performance was improving by 60\% each year, but this slowed to 40\% each year between 2000 to 2004, and slowed again to 20\% in 2004 \cite{geer_2005}. Clearly, increasing the complexity of processor designs is a poor investment.
 
-\section{Multicore Processing}
+\section{Towards Multicore} \label{towards-multicore}
 % What is multicore processing?
 A mulitcore architecture can address the two key issues discussed above. A multicore processor has two or more processing units, called cores, on the same chip. Different to superscalar processors, each core has all the components of an independent processor, including registers, control unit, arithmetic logic unit, instruction pipeline and private L1 cache. The cores also have access to a shared L2 cache, and increasingly, a shared L3 cache. Each core appears to the operating system as a separate processor. 
 
 Performance growth can then come from increasing the number of cores rather than the clock speed. Using multiple cores rather than one increasingly powerful core has a slower growth in power consumption \cite{blake_2009}, meaning that in the case of mobile phones, which are constrained by battery power, the solution has to be multicore \cite{berkel_2009}. A multicore architecture also has the potential to provide a nearly linear performance improvement with complexity. For example, two smaller processor cores instead of one monolithic core can provide a 70-80\% performance improvement, compared to the 40\% mentioned previously \cite{borkar_2007}.
 
-Chip manufacturers soon turned to multicore. In 2001, IBM released the POWER4, the industry’s first server chip with two cores \cite{power4}. In 2005, AMD announced the first dual-core Opteron, their server processor. A month later came the Athlon 64 X2, AMD’s first desktop dual-core processor. Today, the multicore trend shows no signs of slowing down. The Fujitsu A64FX has 48 cores and powers the Fugaku supercomputer \cite{a64fx}, which was the fastest supercomputer in the world as of June 2020 \cite{top500}. The Sunway TaihuLight supercomputer has 256 cores per processor chip, amounting to over 10 million cores across the entire system \cite{sunway}. However, despite being prevalent, multicore processing presents a number of challenges.
+Chip manufacturers soon turned to multicore. In 2001, IBM released the POWER4, the industry’s first server chip with two cores \cite{power4}. In 2005, AMD announced the first dual-core Opteron, their server processor. A month later came the Athlon 64 X2, AMD’s first desktop dual-core processor. Today, the multicore trend shows no signs of slowing down. The Fujitsu A64FX has 48 cores and powers the Fugaku supercomputer \cite{a64fx}, which was the fastest supercomputer in the world as of June 2020 \cite{top500}. The Sunway TaihuLight supercomputer has 256 cores per processor chip, amounting to over 10 million cores across the entire system \cite{sunway}. Despite being prevalent, multicore processing presents a number of challenges.
 
-\subsection{Multicore Challenges}
-Before discussing multicore challenges, it is important to define some technical concepts. An instruction set architecture (ISA) is an abstract model of a computer that defines the type of instructions to be supported by the processor. Examples include x86, ARM, RISC-V and MIPS. A microarchitecture is the design of a particular processor, which implements a specific ISA. Processors may have different microarchitectures, but share a common ISA. For example, the AMD Athlon and the Intel Core processors have entirely different designs, but both implement the x86 ISA with only minor differences.
+\subsection{Architectural Challenges} \label{architectural-challenges}
+Before discussing architectural challenges, it is important to define some technical concepts. An instruction set architecture (ISA) is an abstract model of a computer that defines the type of instructions to be supported by the processor. Examples include x86, ARM, RISC-V and MIPS. A microarchitecture is the design of a particular processor, which implements a specific ISA. Processors may have different microarchitectures, but share a common ISA. For example, the AMD Athlon and the Intel Core processors have entirely different designs, but both implement the x86 ISA with only minor differences.
 
 The ISA will sometimes present a multiple processor (MP) protocol, which defines how the cores interact with one another. However, this is not always the case, and notably the MIPS and RISC-V ISAs do not have mature MP protocols. This shifts the decision about core interaction onto the operating system designer, adding complexity to the design and development of the operating system. The ARM ISA does not have a standardised MP protocol, and so the implementation is left to the developer. Microsoft did propose a protocol in 2014, but this has not been widely adopted. Instead, most developers use the Generic Interrupt Controller (GIC) to interact with the cores.
 
 The x86 ISA does define a multiple-processor (MP) initialisation protocol called the Multiprocessor Specification Version 1.4 \cite{intel-sys-prog-guide}. The protocol defines two classes of processors: the bootstrap processor (BSP) and application processors (APs). If one core requires action from another core, it can send a special type of interrupt, called an inter-processor interrupt (IPI). When the MP system is powered on, the system hardware dynamically selects one of the processors as the BSP, and the remaining processors are identified as APs. The BSP executes the BIOS’s bootstrap code and then the operating-system initialisation code, while the APs wait for a sequence of IPIs from the BSP processor. The sequence, called an INIT-SIPI-SIPI sequence, consists of one init IPI followed by two startup IPIs, with delays throughout to allow the APs time to respond.
 
-\subsubsection{Scalability} \label{scalability}
-Another challenge is fully exploiting the performance improvements offered by multicore architectures. Amdahl’s law \cite{DBLP:conf/afips/Amdahl67} \cite{DBLP:journals/computer/Amdahl13} states that the potential speedup to be gained by using multiple processors is bounded by the amount of program code that is inherently sequential. That is, to fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment. Since much software contains a substantial amount of sequential code, and because communication and distribution of work to multiple cores often incurs a significant overhead, this may lead to the rather pessimistic view that an investment in multicore processing is not worth the returns.
-
-However, Amdahl’s law assumes that the problem size is fixed and independent of the number of processors. Rather, Gustafson’s law tells us that the problem size scales with the number of processors \cite{DBLP:journals/cacm/Gustafson88}, leading to a linear scaling in speedup. This means that the true performance of a large multicore architecture can be fully exploited with a large parallel problem. There are, in fact, numerous applications where it is possible to effectively exploit multicore systems. Database management systems and database applications are one such application \cite{DBLP:journals/queue/McDougall05}. Another is Java applications \cite{DBLP:journals/usenix-login/McDougallL06}. Furthermore, computing presents a large number of embarrassingly parallel problems \cite{DBLP:books/daglib/0020056}, which naturally lend themselves to being solved in parallel. Examples include the Mandelbrot set, Monte Carlo algorithms \cite{DBLP:conf/uai/NeiswangerWX14} and searches in constraint problems \cite{DBLP:journals/jair/MalapertRR16}. In this project, we will benchmark and evaluate the system’s performance on such a problem.
-
-\subsubsection{Architecture} \label{architecture}
 Even with a multiple processor standard, there still remains the issue of how to organise multiple cores. A homogeneous architecture consists of a number of processing cores of the same microarchitecture and ISA. Conversely, a heterogeneous architecture consists of processing cores of different microarchitectures, capabilities and perhaps ISAs, with each core being suited to a certain set of tasks.
 
-Heterogeneous architectures can offer improved performance. As discussed in section \ref{scalability}, to fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment. The programmer's effort to parallelise the program can be reduced if the underlying architecture promises faster execution of the serial part of an application \cite{suleman_2007}. Consider, for example, a system with many simple cores to provide high parallelisation, and a few complex cores to ensure high serial performance too \cite{balakrishnan_2005}. 
+Heterogeneous architectures can offer improved performance. To fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment (discussed further in section \ref{scalability-challenges}). The programmer's effort to parallelise the program can be reduced if the underlying architecture promises faster execution of the serial part of an application \cite{suleman_2007}. Consider, for example, a system with many simple cores to provide high parallelisation, and a few complex cores to ensure high serial performance too \cite{balakrishnan_2005}. 
 
 Core diversity can also offer a greater ability to adapt to the demands of different applications, and running each application on the most appropriate core can increase energy efficiency \cite{kumar_2003}. One notable example is the Arm big.LITTLE architecture \cite{big.little}, which uses two types of processor. “LITTLE” processors are designed for maximum power efficiency, whereas “big” processors are designed for maximum compute performance. The big.LITTLE architecture is well suited to mobile devices such as smartphones and tablets, since it is able to adjust to a dynamic usage pattern of processing intensity while preserving battery life.
 
-Furthermore, with a heterogeneous architecture, cores may even implement different ISAs. A multiple-ISA heterogeneous architecture has the potential to outperform the best single-ISA heterogeneous architecture by as much as 21\%, while offering a 23\% energy saving \cite{venkat_2014}. However, while the benefits of heterogeneous architectures can clearly be seen, they complicate matters for the operating system designer, which we will discuss in the next section.
+Furthermore, with a heterogeneous architecture, cores may even implement different ISAs. A multiple-ISA heterogeneous architecture has the potential to outperform the best single-ISA heterogeneous architecture by as much as 21\%, while offering a 23\% energy saving \cite{venkat_2014}. However, while the benefits of heterogeneous architectures can clearly be seen, they complicate matters for the operating system designer.
 
-\subsubsection{Scheduling} \label{scheduling}
+\subsection{Multicore Implementations} \label{multicore-implementations}
+Many approaches have been taken to multicore operating system design. Tradiationally operating systems have alqays been unicore and then hvae been retrospectively made to support multicore, while trying to keep the same optimisations we found for the single-processor case.
+\textit{todo: Linux is spaghetti code}
+\textit{todo: Look at other mlticore implementations}
+
+\section{InfOS} \label{InfOS-introduction}
+% What is InfOS?
+InfOS \cite{infos} is a research operating system, designed and developed by Tom Spink. It is based on the x86 architecture, and is written entirely from scratch in C++, following object oriented principles. It was written for the UG3 Operating Systems course \cite{ug3os}, although it is technically a general purpose operating system.
+
+InfOS is a valuable teaching tool that forms the foundations of the Operating Systems coursework. It was developed because modern operating system kernels are extremely complex, and not easily understood. InfOS provides interfaces for core operating system operations, such as the scheduler and memory allocator, and allows these to be specified at compile-time via command line arguments. Students can then, for example, implement different memory allocation algorithms, and select which to load at compile-time.
+
+InfOS currently only supports single core processing. However, as discussed, multicore processing is a very prevalent field, and forms a large part of the theory covered in the Operating Systems course. Understanding parallel architectures is vital for a student interested in studying operating systems further, but as we have already mentioned, existing operating system kernels are very complex and difficult to understand. InfOS, being designed with teaching and research in mind, can provide a solution here. The object-oriented design of InfOS will extend naturally to support multicore processing in a well-structured manner, and adding this support will develop InfOS further as a teaching and research tool by adding multicore processing support. This is the objective of this project. This will present a number of challenges, discussed next.
+
+\subsection{Scheduling} \label{scheduling-challenges}
 Before discussing the issue of scheduling, we first define a process to be a program in execution. Each process has an associated context, which tracks the current activity of the process, containing the program counter, register values, process state and so on. The process state may be any one of the following:
 
 \begin{enumerate}
@@ -174,31 +188,231 @@ Before discussing the issue of scheduling, we first define a process to be a pro
 
 Each process also has multiple threads of control. Here, we define a thread to be the unit of work in an operating system, though this can vary slightly between implementations. In a typical system, there are many threads active at a given moment in time, and the role of the scheduler is to multiplex the CPU among them. A nonpreemptive scheduler will allow the currently running thread to maintain control of the CPU until it either blocks or terminates, whereas a preemptive scheduler will interrupt a running thread after a given time slice to allow another thread to run. The scheduler maintains a queue of ready threads, and when a CPU becomes available, it selects the next thread to execute.
 
-In the case of a single core, there are many different algorithms that can be used to choose the next thread to execute, such as first-come-first-served, round-robin or priority scheduling. In the case of multiple cores, the problem becomes more complex, and there are many design decisions to be made. The scheduler may maintain a system-wide ready queue, or it may maintain a ready queue for each core. A system-wide ready queue may be better for homogeneous architectures, but care must be taken to ensure that the ready queue is not subject to race conditions (discussed further in section \ref{synchronisation}) if multiple cores were to become available at the same time. Furthermore, this introduces the issue of processor affinity. When a thread has been running on a specific core, that core’s private cache will hold relevant data to that thread, so the thread will run faster on that specific processor. In other words, the thread has an affinity for a particular core. With a system-wide ready queue, if the thread were to become blocked and placed back into the ready queue, the next time it executes may be on a different core to the one it has an affinity for.
+In the case of a single core, there are many different algorithms that can be used to choose the next thread to execute, such as first-come-first-served, round-robin or priority scheduling. In the case of multiple cores, the problem becomes more complex, and there are many design decisions to be made. The scheduler may maintain a system-wide ready queue, or it may maintain a ready queue for each core. A system-wide ready queue may be better for homogeneous architectures, but care must be taken to ensure that the ready queue is not subject to race conditions (discussed further in section \ref{synchronisation-challenges}) if multiple cores were to become available at the same time. Furthermore, this introduces the issue of processor affinity. When a thread has been running on a specific core, that core’s private cache will hold relevant data to that thread, so the thread will run faster on that specific processor. In other words, the thread has an affinity for a particular core. With a system-wide ready queue, if the thread were to become blocked and placed back into the ready queue, the next time it executes may be on a different core to the one it has an affinity for.
 
 The per-core ready queue naturally solves the issue of affinity, and may be better suited to a heterogeneous architecture. However, the scheduler must then have a way to decide which core each task is most suited to. The scheduler must also undertake load balancing to attempt to keep the workload balanced among all processors. It would not be a good use of a multicore system to have some processors sitting idle with empty ready queues while others have high workloads. 
 
-\subsubsection{Synchronisation} \label{synchronisation}
-\textit{todo: Discuss race conditions, memory consistency, locking, atomic operations, cache coherence etc}
+In the case of InfOS, the scheduler only supports dispatching tasks to run on one core, so it will need to be modified to consider and dispatch tasks to multiple cores. There are multiple design decisions to make here such as system-wide vs per-core ready queues, load balancing and processor affinity, and this is discussed further in section \ref{scheduling-threads}.
 
-\section{InfOS} \label{InfOS}
-% What is InfOS?
-InfOS \cite{infos} is a research operating system, designed and developed by Tom Spink. It is based on the x86 architecture, and is written entirely from scratch in C++, following object oriented principles. It was written for the UG3 Operating Systems course \cite{ug3os}, although it is technically a general purpose operating system.
+\subsection{Synchronisation} \label{synchronisation-challenges}
+With multiple threads executing concurrently and sharing data, if care is not taken, the result of execution can be dependent on the particular order in which memory accesses take place. This is called a race condition, and means that the result of execution is non-deterministic, leading to errors that only appear intermittently. Note that if preemptive scheduling is used, race conditions are a problem even in the unicore case. To see this, consider the case when one thread only partially completes execution before it is interrupted and another one is scheduled. If they are operating on the same data, the interleaving of operations may affect the final result. Adding multiple cores into the system only exacerbates this problem further, since now, two threads can access the same data in a true parallel fashion, and which one gets there first is unpredictable. 
 
-InfOS is a valuable teaching tool that forms the foundations of the Operating Systems coursework. It was developed because modern operating system kernels are extremely complex, and not easily understood. InfOS provides interfaces for core operating system operations, such as the scheduler and memory allocator, and allows these to be specified at compile-time via command line arguments. Students can then, for example, implement different memory allocation algorithms, and select which to load at compile-time.
+The OS must provide some method of synchronisation in order to guarantee the outcome of a particular execution. It can do this using the notion of a critical region, which is the section of code where a thread is modifying shared data. Locking primitives such as spinlocks and mutexes can be used to enforce the following: if a thread wants to enter its critical region, it must wait until no other thread is executing in its critical region. The implementation of these locking primitives relies on atomic assembly instructions, that is, instructions that can be executed as one, uninterruptable unit. If this is not the case, the locking primitives themselves may be subject to race conditions. The x86 ISA provides these atomic instructions, and the C++ standard library uses them to implement an atomics library. However, we will discuss in section \ref{existing-system} that InfOS cannot use the standard C++ library, so any locking primitives required by the OS must be written from scratch, using x86's atomic instructions.
 
-InfOS currently only supports single core processing. However, as discussed, multicore processing is a very prevalent field, and forms a large part of the theory covered in the Operating Systems course. The objective of this project is to develop InfOS further as a teaching and research tool by adding multicore processing support. This presents a number of challenges, discussed in the next section.
+\subsection{Scalability} \label{scalability-challenges}
+Another challenge is fully exploiting the performance improvements offered by multicore architectures. Amdahl’s law \cite{DBLP:conf/afips/Amdahl67} \cite{DBLP:journals/computer/Amdahl13} states that the potential speedup to be gained by using multiple processors is bounded by the amount of program code that is inherently sequential. That is, to fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment. Since much software contains a substantial amount of sequential code, and because communication and distribution of work to multiple cores often incurs a significant overhead, this may lead to the rather pessimistic view that an investment in multicore processing is not worth the returns.
 
-\subsection{Challenges}
-\textit{Note: There is definitely more to add here. This also probably belongs in a shorter, bulleted form in the Introduction section when written, but it can stay here for now.}
-\subsubsection{Design}
-There is currently no way to model or represent cores in InfOS. It only recognises one CPU, so data structures will need to be designed to represent the individual cores, and the core architecture (homogeneous or heterogeneous) will have to be decided.
+However, Amdahl’s law assumes that the problem size is fixed and independent of the number of processors. Rather, Gustafson’s law tells us that the problem size scales with the number of processors \cite{DBLP:journals/cacm/Gustafson88}, leading to a linear scaling in speedup. This means that the true performance of a large multicore architecture can be fully exploited with a large parallel problem. There are, in fact, numerous applications where it is possible to effectively exploit multicore systems. Database management systems and database applications are one such application \cite{DBLP:journals/queue/McDougall05}. Another is Java applications \cite{DBLP:journals/usenix-login/McDougallL06}. Furthermore, computing presents a large number of embarrassingly parallel problems \cite{DBLP:books/daglib/0020056}, which naturally lend themselves to being solved in parallel. Examples include the Mandelbrot set, Monte Carlo algorithms \cite{DBLP:conf/uai/NeiswangerWX14} and searches in constraint problems \cite{DBLP:journals/jair/MalapertRR16}. In this project, we will benchmark and evaluate the system’s performance on such a problem to ascertain the potential performance scaling, and compare this against the scaling achieved by Linux.
 
-\subsubsection{Scheduling}
-The scheduler only supports dispatching tasks to run on one core, so it will need to be modified to schedule tasks to run on multiple cores. As already discussed in section \ref{scheduling}, there are the issues of system-wide vs per-core ready queues, algorithms to select the next thread, load balancing and processor affinity to consider.
+\chapter{Implementation} \label{implementation}
 
-\subsubsection{Synchronisation}
-Care needs to be taken around the issue of synchronisation when running multiple threads on multiple cores, as discussed in section \ref{synchronisation}. Locking primitives such as mutex locks and semaphores can be used to ensure data integrity, but these must be designed and planned.
+\section{Existing system} \label{existing-system}
+As described in section \ref{multicore-implementations}, InfOS has a clear advantage over other operating systems because it was designed to be straightforward to understand. With this being said, InfOS is still a general purpose operating system, and the whole repository comprises about 20,000 lines of code. Before implementation could begin, a major conceptual challenge was understanding the existing system. There is a coursework specification (ref ??? learn) written by the designer, Tom Spink, aimed at students of the UG3 operating systems course. The specification explains how students can implement small parts of the InfOS system for their coursework, and it also includes a description of InfOS’s high-level structure and implementation, but it is by no means extensive technical documentation. Most of my understanding of InfOS therefore came from exploring the existing codebase and Intel Architectures Software Developer’s Manual \cite{intel-full-manual}. This consumed a significant portion of development time both at the beginning of the project and throughout the entire implementation.
+
+The C++ standard library is implemented for specific operating systems and makes use of those operating system’s system calls. For this reason, there is no existing C++ standard library for InfOS, and any standard functions and objects such as input/output, lists, maps, atomics support and time utilities are not available. InfOS already implements its own versions of List and Map, but any other standard C++ functionality needed during the implementation had to be written by either myself or Tom Spink, and this became particularly relevant when atomic operations were needed. The implementation had to be entirely written in the C++ core language \cite{cpp-core}.
+ 
+The Advanced Programmable Interrupt Controller (APIC) \cite{intel-sys-prog-guide} is the Intel standard for processors, and InfOS is an APIC-based system. The standard defines two main controllers, a local APIC (LAPIC) and an external input/output APIC (I/O APIC). The I/O APIC is responsible for receiving external I/O interrupts, such as keyboard strokes, and relaying them to the LAPIC. Each LAPIC has an LAPICTimer, and the LAPIC is responsible for receiving internal I/O interrupts such as LAPICTimer interrupts, alongside the I/O APIC generated interrupts. APIC supports multiprocessor systems by representing each processor as a core and an LAPIC, with each LAPIC handling core-specific interrupts. With this representation, the system has one I/O APIC, and as many LAPICs and LAPICTimers as there are cores. The cores may communicate by sending Inter-processor Interrupts (IPIs) from their LAPIC to another processor’s LAPIC \cite{intel-sys-prog-guide}.
+
+InfOS has an object-oriented design, with each of the major components of the operating system represented as a subclassed device object. For example, the scheduler, I/O APIC and LAPIC are all represented as devices. When InfOS boots, the platform is probed, and any detected devices are created during and registered with the device manager. Every device is assigned a unique name by the device manager, who is then responsible for providing an interface that allows any class of device to be accessed by other parts of the system. The most natural design extension was to represent the cores as objects, with each core having a separate LAPIC and LAPICTimer object. With this design in mind, we broke the implementation down into four main milestones:
+
+\begin{description}
+\item [Detecting cores.] QEMU \cite{qemu} is a virtualisation environment that can be used to boot real operating systems in a virtual machine, and was used throughout development to emulate running InfOS. This allowed me to easily configure the processor architecture to emulate, specifically the number of cores. The first milestone, then, was to supply InfOS with multiple cores and detect those cores during boot up.
+
+\item [Initialising cores.] As previously mentioned, the x86 ISA defines a MP initialisation protocol, which defines two classes of processors, the bootstrap processor (BSP) and application processors (APs). The BSP runs the main operating system boot code, and is responsible for the previous detection of other cores. When the AP cores boot, they are initially in a waiting state, so the BSP is also responsible for sending IPIs to those APs to give them something to do. The role of initialising the cores, then, is to give them a stack and a memory address to start execution at. For the purpose of this milestone, the code can be general code, such as “Hello world from core x!”.
+
+\item[Calibrating timers.] InfOS already supports preemptive scheduling. This is achieved by LAPICTimer interrupts every millisecond triggering a scheduling event. Therefore, each core’s timer had to be calibrated and initialised to send periodic interrupts. The calibration code determines the frequency of the timer by measuring it against the programmable interrupt timer (PIT), meaning that the calibration code must be executed on the core itself to determine the correct frequency. Therefore, it made sense to do the timer calibration once each core was awake and running general code, and this was the third milestone.  
+
+\item[Scheduling threads.] On every timer interrupt, a scheduler event occurs, so the next logical step once each core was taking timer interrupts was to configure the scheduler to recognise multiple cores and dispatch tasks between them. Once this was implemented, all threads running in the operating system would need to be shared between the cores. There was a lot of design decisions to be made here, such as how to share the threads between the cores and whether a centralised scheduling manager should be used to coordinate.
+\end{description}
+
+\section{Detecting cores} \label{detecting-cores}
+As already mentioned, QEMU provides a simple way to modify the number of cores available to InfOS via the \verb|-smp| argument. For instance, InfOS can run on a dual-core processor by adding the command line argument \verb|-smp 2| to the run script. Once provided with multiple cores, however, InfOS still has to detect them. The Advanced Configuration and Power Interface (ACPI, not to be confused with the previously mentioned Advanced Programmable Interrupt Controller, APIC) provides an open standard that operating systems can use to discover and configure hardware components. To begin using ACPI, the operating system must locate the Root System Description Pointer (RSDP), which contains a pointer to the Root System Description Table (RSDT), which contains pointers to yet more tables describing the hardware available on the system. InfOS already had an implementation to locate the RSDP, enable ACPI and parse the tables, so I extended this existing code to collect information about the available cores. 
+
+One of the tables pointed to by the RSDT is the Multiple APIC Description Table (MADT), which describes all of the interrupt controllers in the system. Each entry in the MADT has an entry type, and entry type 0 is used to represent LAPICs, as shown in figure \ref{madtentry0}. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.7]{madtentry0.jpg}
+    \caption{MADT Entry Type 0 \cite{osdev-madt}}
+    \label{madtentry0}
+\end{figure}
+
+Since each core has its own LAPIC, each core's LAPIC will be represented by an individual MADT entry of type 0. Each entry contains the processor's ID, the LAPIC's ID and a set of flags. The flags are represented as 32 bits (see figure \ref{entry0flags}) and contain extremely important information: whether or not the processor can be enabled. If bit zero is set, the processor is enabled. If bit zero is clear, but bit one is set, then the system supports enabling the processor during OS runtime. If neither bit is set, then there is some error with the processor, meaning that it cannot be enabled and the OS should not try.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.6]{figures/entry0flags.jpg}
+    \caption{Entry type 0 flags structure}
+    \label{entry0flags}
+\end{figure}
+
+It is useful to know which core is the BSP (for timing purposes, discussed further in section \ref{calibrating-timers}), so this information needs to be recorded at some point during core detection or core initialisation. The simplest way is to record the ID of the BSP, which can be done by reading the ID register of the BSP's LAPIC. However, each core is only directly able to access its own LAPIC registers, so this read must be done by code executing on the BSP. At this stage of boot, only the BSP is executing code while the APs sit idle, so the core running the code parsing the ACPI tables is guaranteed to be the BSP. For this reason, it makes sense to collect the BSP ID at this point by reading the LAPIC ID register, and store it for later.
+
+As already discussed, the object-oriented design of InfOS extends well to supporting multiple cores. I decided to represent each core as a new subclass of device, creating and registering a new core object with the device manager whenever an entry type 0 was encountered in the MADT table. Within the core object, I stored the LAPIC ID, needed later for sending inter-processor interrupts between cores, and the core state. The core state is represented by an enum with four values, \verb|BOOTSTRAP|, \verb|ONLINE|, \verb|OFFLINE|, and \verb|ERROR|, and is used during the core initialisation process to decide whether or not to send the wake sequence of IPIs to the core. If bit zero and bit one are both clear, the core state is set to \verb|ERROR| so that the core is not enabled later. Otherwise, the core's state is set to \verb|OFFLINE|, with this being changed to \verb|ONLINE| once the initialisation sequence is complete. The only exception is the case when the core's ID matches the BSP's ID, in which case the state is set to \verb|BOOTSTRAP|. Note that state \verb|BOOTSTRAP| implies the state \verb|ONLINE|, since if we have reached this stage in the boot process, the BSP is already executing code.
+
+\section{Initialising cores} \label{initialising-cores}
+
+
+
+\section{Calibrating timers} \label{calibrating-timers}
+\section{Scheduling threads} \label{scheduling-threads}
+
+
+\section{Evaluation}
+
+\begin{table}[!htp]\centering
+\caption{Mandelbrot timing!}\label{timing-infos-mb}
+\scriptsize
+\begin{tabular}{ccc}\toprule
+Cores &Threads &Average (s) \\
+\midrule
+1 &1 &9.143 \\
+\midrule
+1 &2 &9.150 \\
+1 &4 &9.400 \\
+1 &8 &9.387 \\
+1 &16 &9.243 \\
+1 &32 &9.430 \\
+\midrule
+2 &2 &4.753 \\
+2 &4 &4.930 \\
+2 &8 &4.950 \\
+2 &16 &4.887 \\
+2 &32 &4.873 \\
+\midrule
+3 &2 &\textbf{4.900} \\
+3 &4 &3.453 \\
+3 &8 &3.447 \\
+3 &16 &3.377 \\
+3 &32 &3.390 \\
+\midrule
+4 &2 &\textbf{4.910} \\
+4 &4 &2.647 \\
+4 &8 &2.670 \\
+4 &16 &2.677 \\
+4 &32 &2.687 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[!htp]
+\parbox{.33\linewidth}{
+\centering
+\label{timing-infos-mb-mod}
+\scriptsize
+\begin{tabular}{ccc}
+\toprule
+Cores &Threads &Average (s) \\
+\midrule
+1 &1 &9.210 \\
+\midrule
+1 &2 &9.200 \\
+1 &4 &9.378 \\
+1 &8 &9.367 \\
+1 &16 &9.135 \\
+1 &32 &9.273 \\
+\midrule
+2 &2 &4.539 \\
+2 &4 &4.736 \\
+2 &8 &4.763 \\
+2 &16 &4.587 \\
+2 &32 &4.644 \\
+\midrule
+3 &2 &\textbf{4.678} \\
+3 &4 &3.228 \\
+3 &8 &3.260 \\
+3 &16 &3.184 \\
+3 &32 &3.266 \\
+\midrule
+4 &2 &\textbf{4.676} \\
+4 &4 &2.429 \\
+4 &8 &2.457 \\
+4 &16 &2.473 \\
+4 &32 &2.451 \\
+\bottomrule
+\end{tabular}
+\caption{Infos mandelbrot modified description}
+}
+\hfill
+\parbox{.32\linewidth}{
+\centering
+\label{timing-linux-mb-mod}
+\scriptsize
+\begin{tabular}{ccc}
+\toprule
+Cores &Threads &Average (s) \\
+\midrule
+1 &1 &16.716 \\
+\midrule
+1 &2 &16.560 \\
+1 &4 &16.678 \\
+1 &8 &16.443 \\
+1 &16 &16.453 \\
+1 &32 &16.465 \\
+\midrule
+2 &2 &8.356 \\
+2 &4 &8.411 \\
+2 &8 &8.320 \\
+2 &16 &8.421 \\
+2 &32 &8.365 \\
+\midrule
+3 &2 &\textbf{8.380} \\
+3 &4 &5.776 \\
+3 &8 &5.778 \\
+3 &16 &5.761 \\
+3 &32 &5.804 \\
+\midrule
+4 &2 &\textbf{8.335} \\
+4 &4 &4.345 \\
+4 &8 &4.457 \\
+4 &16 &4.297 \\
+4 &32 &4.363 \\
+\bottomrule
+\end{tabular}
+\caption{linux mandelbrot modified description}
+}
+\hfill
+\parbox{.33\linewidth}{
+\centering
+\label{timing-infos-slow-mb-mod}
+\scriptsize
+\begin{tabular}{ccc}
+\toprule
+Cores &Threads &Average (s) \\
+\midrule
+1 &1 &16.687 \\
+\midrule
+1 &2 &16.732 \\
+1 &4 &16.558 \\
+1 &8 &16.726 \\
+1 &16 &16.792 \\
+1 &32 &16.538 \\
+\midrule
+2 &2 &8.584 \\
+2 &4 &8.862 \\
+2 &8 &8.575 \\
+2 &16 &8.403 \\
+2 &32 &8.526 \\
+\midrule
+3 &2 &\textbf{8.659} \\
+3 &4 &5.778 \\
+3 &8 &5.913 \\
+3 &16 &5.820 \\
+3 &32 &5.764 \\
+\midrule
+4 &2 &\textbf{8.663} \\
+4 &4 &4.319 \\
+4 &8 &4.404 \\
+4 &16 &4.615 \\
+4 &32 &4.765 \\
+\bottomrule
+\end{tabular}
+\caption{infos slow mandelbrot modified descrip}
+}
+\end{table}
+
+
+
 
 % use the following and \cite{} as above if you use BibTeX
 % otherwise generate bibtem entries
