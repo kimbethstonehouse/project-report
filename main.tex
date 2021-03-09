@@ -8,6 +8,8 @@
 \usepackage{soul}% for underlines
 \usepackage[table]{xcolor} % for cell colors
 \usepackage{changepage,threeparttable} % for wide tables
+\usepackage{pgfplots}
+
 \graphicspath{ {./figures/} }
 
 \begin{document}
@@ -258,9 +260,55 @@ As already discussed, the object-oriented design of InfOS extends well to suppor
 \section{Scheduling threads} \label{scheduling-threads}
 
 
-\section{Evaluation}
+\chapter{Evaluation}
 
-\begin{table}[!htp]\centering
+As discussed in section \ref{scalability-challenges}, in order to fully exploit the processing power of multiple cores, software needs to be highly adapted to a parallel execution environment. An embarrassingly parallel problem is one where very little effort is needed to divide the original task into a set of almost independent parallel tasks, and such problems are both pervasive in computing and well-suited to exploit a parallel architecture. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.15]{mandelbrot-bw.jpg}
+    \caption{Black and white rendering of the Mandelbrot set \cite{mandelbrot-bw}}
+    \label{mandelbrot-bw}
+\end{figure}
+
+\section{The Mandelbrot Set}
+The Mandelbrot set is the set of complex numbers $c$ for which the recurrence relation $f_{c}(z) = z^2 +c$ with $z_{0}=0$ does not diverge. Thus, a complex number $c$ is a member of the Mandelbrot set if, when applying $f_{c}$ repeatedly, the absolute value of $z_{n}$ remains bounded for all $n>0$. The set can be represented visually in a two-dimensional plane by taking each $(x,y)$ point in the plot as the real and imaginary parts of a complex number $c$, such that $c=x+iy$. You can then use each $(x,y)$ point as the starting values for the recurrence relation $f_{c}$, feeding the result of iteration $n$ into iteration $n+1$. An arbitrary escape value is chosen, and each iteration checks whether the result has exceeded this critical value, or diverged. If the computation has diverged, that pixel is not a member of the Mandelbrot set, and computation for that particular pixel terminates. A simple black and white rendering like figure \ref{mandelbrot-bw} can then colour a pixel black if it does not diverge (a member of the Mandelbrot set), or white if it does diverge. A coloured rendering can provide additional detail by recording how many iterations it takes each pixel to diverge and colouring each pixel correspondingly. This gives a representation of how fast each pixel diverges, as shown in figure \ref{mandelbrot-vis}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.6]{mandelbrot.jpg}
+    \caption{Coloured rendering of the Mandelbrot set \cite{mandelbrot-set}}
+    \label{mandelbrot-vis}
+\end{figure}
+
+The algorithm described above is often known as the escape time algorithm \cite{mandelbrot-plotting-algorithms}. It is a perfect example of an embarrassingly parallel problem, because the computation of each pixel is independent from every other pixel in the plane. Separate threads within InfOS could therefore handle the computation of each pixel without the need for any communication, making this an ideal benchmark to see if introducing multiple cores improves performance significantly.
+
+\section{Experimental Environment}
+\subsection{Benchmark}
+I wrote a program in InfOS userspace to compute and display the Mandelbrot set in the shell. The program takes the number of threads as a parameter and must distribute the computational work evenly between them. One simple way to do this would be to divide the plane into equal sections and have each thread compute all the pixels within a section independently, but it is important to note that this would not be an equal division of work because pixels require differing amounts of work to compute. Some pixels may diverge very quickly, after a handful of iterations, whereas others may take longer to diverge or not diverge at all, running for thousands of iterations until a maximum iterations limit is reached. To distribute the work more evenly, the program instead uses a global \verb|next_pixel| variable which ranges from \verb|0| to \verb|80x25|, or \verb|2000|. The requested number of threads are then created, and when a thread has no work to do, it atomically reads the value of \verb|next_pixel| and increments it using a \verb|fetch_and_add| function. The thread is then responsible for computing that pixel, and the $(x,y)$ values are retrieved using \verb|x=next_pixel%80| and \verb|y=next_pixel/25|. The colour for each pixel is decided based on the number of iterations, and a \verb|*| character of that colour is printed directly to the shell at the correct $(x,y)$ position. This results in an output like figure \ref{terminal-output}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.6]{figures/terminal-output.jpg}
+    \caption{Rendering of the Mandelbrot set in the InfOS shell}
+    \label{terminal-output}
+\end{figure}
+
+It is important that the function \verb|fetch_and_add| is atomic to ensure that no race conditions arise when two threads attempt to access \verb|next_pixel| at the same time. As already mentioned, InfOS does not have access to the standard C++ library with atomics support, so this \verb|fetch_and_add| function was written in userspace using x86 assembly instructions, specifically \verb|xaddl|, by Tom Spink. The use of this \verb|next_pixel| variable ensures that all threads are kept busy until the entire plane has been computed, maximising throughput. \\
+
+One other important point to note is that the Mandelbrot set is traditionally implemented using floating-point arithmetic. While InfOS does have a floating point unit, it does not routinely save the context of the floating point registers during a context switch between threads. This means that on every context switch, threads would interfere with one another's calculations, unless the floating point state was saved. We did spend some time trying to implement saving floating point state with the \verb|xsave| instruction, but this turned out to be more complex than expected and we weren't able to implement this past the unicore case within the time available. Because the focus of this project is parallel work rather than floating point arithmetic, we instead decided to implement the Mandelbrot algorithm using fixed-point arithmetic and leave the floating point context switching as future work. A fixed-point number representation simply stores all values multiplied by some normalisation factor, uses integer operations for calculations, and then normalises the result. By choosing the multiplier to be a power of 2, I was able to compute the Mandelbrot set using only integer operations, and then use bit shifting operations to quickly perform multiplication and division when necessary.
+
+\subsection{Parameters}
+I then ran this Mandelbrot benchmark on InfOS, varying the number of cores and threads. For each configuration, I timed the real execution time using a timing program written by Tom Spink. I also ported the Mandelbrot benchmark into a Linux version (using pthreads, rather than InfOS threads) and ran the same experiments, timing using the \verb|time| command. The aim here was twofold: firstly, I wanted to determine the absolute performance improvement gained by adding more cores to InfOS. Secondly, I also wanted to compare how InfOS's performance scales with additional resources in comparison to a highly-developed and well-established operating system. In order to ensure accuracy, both Tom Spink's timing program and Linux's \verb|time| program were verified using an external stopwatch. In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. 
+
+\\todo: multiple threads n that
+\\also two versions of mandelbrot
+
+
+\section{Results}
+
+
+\begin{table}[h]\centering
 \caption{Mandelbrot timing!}\label{timing-infos-mb}
 \scriptsize
 \begin{tabular}{ccc}\toprule
@@ -295,8 +343,16 @@ Cores &Threads &Average (s) \\
 \end{tabular}
 \end{table}
 
-\begin{table}[!htp]
-\parbox{.33\linewidth}{
+% \pgfplotstabletypeset{infos-timing.txt}
+% \begin{tikzpicture}
+% \begin{axis}[xlabel=Number of Cores, ylabel=Time in seconds]
+% \addplot table [y=Average, x=Cores]{infos-timing.txt};
+% \end{axis}
+% \end{tikzpicture}
+
+
+\begin{table}[h]
+\parbox{.45\linewidth}{
 \centering
 \label{timing-infos-mb-mod}
 \scriptsize
@@ -334,7 +390,7 @@ Cores &Threads &Average (s) \\
 \caption{Infos mandelbrot modified description}
 }
 \hfill
-\parbox{.32\linewidth}{
+\parbox{.45\linewidth}{
 \centering
 \label{timing-linux-mb-mod}
 \scriptsize
@@ -342,76 +398,36 @@ Cores &Threads &Average (s) \\
 \toprule
 Cores &Threads &Average (s) \\
 \midrule
-1 &1 &16.716 \\
+1 &1 &8.937 \\
 \midrule
-1 &2 &16.560 \\
-1 &4 &16.678 \\
-1 &8 &16.443 \\
-1 &16 &16.453 \\
-1 &32 &16.465 \\
+1 &2 &8.864 \\
+1 &4 &8.708 \\
+1 &8 &8.857 \\
+1 &16 &8.866 \\
+1 &32 &8.873 \\
 \midrule
-2 &2 &8.356 \\
-2 &4 &8.411 \\
-2 &8 &8.320 \\
-2 &16 &8.421 \\
-2 &32 &8.365 \\
+2 &2 &4.584 \\
+2 &4 &4.572 \\
+2 &8 &4.542 \\
+2 &16 &4.449 \\
+2 &32 &4.466 \\
 \midrule
-3 &2 &\textbf{8.380} \\
-3 &4 &5.776 \\
-3 &8 &5.778 \\
-3 &16 &5.761 \\
-3 &32 &5.804 \\
+3 &2 &\textbf{4.578} \\
+3 &4 &3.079 \\
+3 &8 &3.158 \\
+3 &16 &3.162 \\
+3 &32 &3.185 \\
 \midrule
-4 &2 &\textbf{8.335} \\
-4 &4 &4.345 \\
-4 &8 &4.457 \\
-4 &16 &4.297 \\
-4 &32 &4.363 \\
+4 &2 &\textbf{4.563} \\
+4 &4 &2.432 \\
+4 &8 &2.382 \\
+4 &16 &2.359 \\
+4 &32 &2.426 \\
 \bottomrule
 \end{tabular}
 \caption{linux mandelbrot modified description}
 }
-\hfill
-\parbox{.33\linewidth}{
-\centering
-\label{timing-infos-slow-mb-mod}
-\scriptsize
-\begin{tabular}{ccc}
-\toprule
-Cores &Threads &Average (s) \\
-\midrule
-1 &1 &16.687 \\
-\midrule
-1 &2 &16.732 \\
-1 &4 &16.558 \\
-1 &8 &16.726 \\
-1 &16 &16.792 \\
-1 &32 &16.538 \\
-\midrule
-2 &2 &8.584 \\
-2 &4 &8.862 \\
-2 &8 &8.575 \\
-2 &16 &8.403 \\
-2 &32 &8.526 \\
-\midrule
-3 &2 &\textbf{8.659} \\
-3 &4 &5.778 \\
-3 &8 &5.913 \\
-3 &16 &5.820 \\
-3 &32 &5.764 \\
-\midrule
-4 &2 &\textbf{8.663} \\
-4 &4 &4.319 \\
-4 &8 &4.404 \\
-4 &16 &4.615 \\
-4 &32 &4.765 \\
-\bottomrule
-\end{tabular}
-\caption{infos slow mandelbrot modified descrip}
-}
 \end{table}
-
-
 
 
 % use the following and \cite{} as above if you use BibTeX
