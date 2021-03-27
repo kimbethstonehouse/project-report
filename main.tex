@@ -9,6 +9,7 @@
 \usepackage[table]{xcolor} % for cell colors
 \usepackage{changepage,threeparttable} % for wide tables
 \usepackage{pgfplots}
+\usepackage{csquotes}
 
 \graphicspath{ {./figures/} }
 
@@ -218,11 +219,20 @@ The most prominent open-source operating system is Linux. Within Linux, all acti
 Normal tasks are handled by the Completely Fair Scheduler (CFS), which aims to multiplex the processing resources fairly between tasks. Rather than allocating each task a static time slice like earlier versions of the scheduler did, CFS allocates each task a proportion of the processor's time. Each task is assigned a nice value, ranging from -20 to 19, indicating the task's priority. The higher the nice value, the lower the task's priority, such that decreasing your priority increases how nice you are being to the rest of the system. Each task's proportion of the processor time is also weighted by nice value. This means that a task's time slice depends on the total number of runnable threads and their priorities, which is particularly good for interactive workloads. Real time tasks are handled differently. They have a priority ranging from 1 to 99, again with a smaller number representing a higher priority. While the Linux kernel usually meets the real-time deadlines, the scheduling approach is a soft one, meaning that no guarantees are provided on how quickly a real time thread will be scheduled after becoming runnable \cite{silberschatz}. The real time scheduler can operate in two modes, first-in-first-out (FIFO) or round-robin (RR). FIFO schedules a task until it terminates, whereas RR schedules each task for a fixed time slice and preempts that task for either a higher-priority task, or a task of the same priority if the time slice has expired \cite{seeker}.
 
 \subsubsection{Transition to multicore} \label{transition-to-multicore}
-Multicore support was introduced in June 1996, with version 2.0 of the kernel. However, because the Linux kernel was not designed with multiple cores in mind, the transition was not simple. The preliminary approach taken was Big Kernel Locking (BKL), which involved one singular lock that had to be acquired before any thread could enter kernel space. The lock was then released on that thread returning to user space, allowing the next thread to enter kernel space. The main advantage of BKL was that it provided simple concurrency control with little code modification. However, the disadvantage was that while threads in user space could run concurrently and utilise multiple cores, kernel threads could not. The discussion of Amdahl's law in section \ref{scalability-challenges} notes that any performance gained from multiple processors is bounded by the portion of the code that is inherently sequential, meaning that the serial nature of the kernel code was a major performance limitation.
+Multicore support was introduced in June 1996, with version 2.0 of the kernel. However, because the Linux kernel was not designed with multiple cores in mind, the transition was not simple, and the developers had to consider both synchronisation issues and scheduling challenges. The preliminary approach taken to synchronisation was Big Kernel Locking (BKL), which involved one singular lock that had to be acquired before any thread could enter kernel space. The lock was then released on that thread returning to user space, allowing the next thread to enter kernel space. The main advantage of BKL was that it provided simple concurrency control with little code modification. However, the disadvantage was that while threads in user space could run concurrently and utilise multiple cores, kernel threads could not. The discussion of Amdahl's law in section \ref{scalability-challenges} notes that any performance gained from multiple processors is bounded by the portion of the code that is inherently sequential, meaning that the serial nature of the kernel code was a major performance limitation.
 
 The developers had only intended to use BKL to ease the initial transition to multicore. They then began making an effort to transition towards finer-grained locking, aiming to protect each data structure with an individual lock and eventually remove the BKL \cite{locking-smp-kernels}. However, changes to the locking code had to be implemented very cautiously, to avoid introducing difficult-to-detect deadlocks. The problem was exacerbated by the sheer scale of the Linux kernel project.  It was a long and difficult task to map the semantics of such a large codebase and refactor it to use finer-grained locking, and every additional fine-grained lock increased the complexity. It was not until version 2.6.39 of the kernel was released in May 2011 that the BKL was finally removed, some 15 years after it was first introduced. 
 
-While the CFS algorithm is intuitive, balancing the workload of multiple cores adds complexity. In section \ref{scheduling-challenges} we discussed that the scheduler could either maintain a system-wide runqueue with synchronised accesses, or multiple per-core runqueues with explicit load balancing. In practice, synchronised accesses are expensive and increase the context switch overhead too much, so per-core runqueues are the more sustainable choice. This is the approach that Linux takes, with each core's runqueue tracking and scheduling the runnable tasks assigned to that core, and the scheduler performing system-wide load balancing periodically. Active load balancing has the main scheduler check regularly how the load is spread throughout the system, and redistributing tasks if. Idle load balancing is essentially emergency load balancing that calls an \verb|idle_balance()| function to request work when a core's runqueue becomes empty. Balancing is also performed when deciding where to allocate newly created or awoken tasks \cite{seeker}. 
+In terms of scheduling, the unicore case was largely considered to be a solved problem. In fact, when discussing Linux's transition to multicore scheduling, Linus Torvalds said:
+
+\begin{displayquote}
+"I suspect that making the
+scheduler use per-CPU queues together with some inter-CPU load balancing
+logic is probably trivial. Patches already exist, and I don't feel that
+people can screw up the few hundred lines too badly." \cite{lwn-sched-easy}
+\end{displayquote} 
+
+However, while the CFS algorithm is intuitive, balancing the workload of multiple cores was more challenging than originally anticipated. In section \ref{scheduling-challenges} we discussed that the scheduler could either maintain a system-wide runqueue with synchronised accesses, or multiple per-core runqueues with explicit load balancing. In practice, synchronised accesses are expensive and increase the context switch overhead too much, so per-core runqueues are the more sustainable choice. This is the approach that Linux takes, with each core's runqueue tracking and scheduling the runnable tasks assigned to that core, and the scheduler performing system-wide load balancing periodically. Active load balancing has the main scheduler check regularly how the load is spread throughout the system, and redistributing tasks if. Idle load balancing is essentially emergency load balancing that calls an \verb|idle_balance()| function to request work when a core's runqueue becomes empty. Balancing is also performed when deciding where to allocate newly created or awoken tasks \cite{seeker}. 
 
 Whilst necessary, performing load balancing is computationally demanding, involving iterating over multiple runqueues to evaluate how the load is distributed. Furthermore, the load balancing approach must consider that migrating tasks between cores will often result in a cache flush, which could be detrimental to performance. It is better to migrate tasks between cores that share physical resources where possible. To account for this, the Linux scheduler tries to optimise the load balancing algorithm, grouping together cores that share physical resources into a hierarchy. For example, one core with hyperthreading would be seen as two logical cores to the operating system, and these would be grouped together at the lowest level of the hierarchy. Separate physical cores with access to a shared cache would then be grouped together into the next level and so on, until all cores were grouped together. Each level of the hierarchy is a scheduling domain, and load balancing runs on each domain, from bottom to top. Each domain can contain one or more scheduling groups, which are treated as a single unit by the domain. The crucial optimisation is that the scheduler tries to balance the load within the domain without examining the work within each individual group. Instead, the scheduler uses only each group's average load to estimate whether the domain is balanced, which can introduce performance bugs. Consider, for example, the case where two cores are in a group, and one core is overloaded while the other is underloaded. The average workload of the group conceals the fact that one of the cores is actually sat idle, which could only be seen by examining the workloads within the group \cite{wasted-cores}.
 
@@ -243,23 +253,24 @@ Linux is mostly written in the C language. While extremely fast and powerful, it
 This was compounded by the complexity of the transition to multicore. If the developers had the opportunity to redesign Linux with multicore in mind, the design could have been greatly reduced. However, once an operating system is established, redesign is not a feasible option. The cost of redeveloping Linux was estimated in 2011 at \$3 billion USD \cite{linux-kernel-cost}, and again in 2018 at \$14.7 billion USD \cite{cost-to-redev}. Additionally, the Linux documentation is not yet complete, with the community still working to integrate separate documents into a coherent whole \cite{linux-docs}. In essence, while being a freely-accessible example of an established operating system, Linux is not easily understood.
 
 \subsection{Barrelfish}
-The negative implications of retrospective multicore design have been recognised by other researchers \cite{barrelfish-article}. Barrelfish \cite{barrelfish-website} is a research operating system written from scratch, that aims to find a good way of organising multiple cores without concern for an existing codebase. The researchers are using this freedom to explore radical new ideas, specifically focused on increasing scalability.
-
+The negative implications of retrospective multicore design are beginning to be recognised \cite{barrelfish-article}. Current operating systems were not designed to support computers with large numbers of cores, and researchers are beginning to explore radical new ideas, specifically focused on increasing scalability. One such project is a research operating system called Barrelfish \cite{barrelfish-website} that aims to explore a new paradigm for negotiating the multicore era. Barrelfish is written from scratch, removing the constraints that an operating system with an existing codebase bring. In particular, the researchers have proposed that having a shared-memory kernel with data structures protected by locks is a bottleneck. Rather than having small parts of the kernel stored in the caches of each processor and trying to maintain cache coherence, they instead experiment with a multikernel architecture. This is a distributed system with essentially one kernel per core, each having a replicated operating system state. The kernels explicitly communicate via message-passing and hardware keeps the replicated states consistent. The project also recognises the increasing diversity in computer hardware, and focuses on designing the operating system structure to be independent of particular hardware characteristics, increasing portability. 
 
 \subsection{RTOS}
 Another class of OS that demands performance guarantees
 how does it compare to RTOSs in the embedded domain, like FreeRTOS
 
+Tom - RTOSs have strict performance requirements, any ideas how to link to this project?
+
 \section{Motivation} \label{motivation}
-InfOS \cite{infos} is a research operating system, written entirely from scratch in C++ following an object-oriented design. It is based on the x86 architecture, and was designed and developed by Tom Spink for the UG3 Operating Systems course \cite{ug3os}, although it is technically a general purpose operating system. InfOS was designed precisely because modern operating system kernels like the Linux kernel are extremely complex and difficult to understand. It is a valuable teaching tool that forms the foundations of the Operating Systems coursework, providing interfaces for core operating system operations, allowing students to rewrite different subsystems like the memory allocator or the scheduler, developing their understanding of operating system internals. InfOS currently only supports single core processing, but being relatively lightweight in comparison to the operating systems discussed above, InfOS presents a unique opportunity to redesign an operating system specifically with multicore processing in mind. 
+InfOS \cite{infos} is a research operating system, written entirely from scratch in C++ following an object-oriented design. It is based on the x86 architecture, and was designed and developed by Tom Spink for the UG3 Operating Systems course \cite{ug3os}, although it is technically a general purpose operating system. InfOS was designed precisely because modern operating system kernels like the Linux kernel are extremely complex and difficult to understand. It is a valuable teaching tool that forms the foundations of the Operating Systems coursework and provides interfaces for core operating system operations. This allows students to rewrite different subsystems like the memory allocator or the scheduler and develop their understanding of operating system internals. 
+
+InfOS currently only supports single core processing, but being relatively lightweight in comparison to large-scale and long-lived operating systems, InfOS presents a rare opportunity to redesign an operating system specifically with multicore processing in mind. The object-oriented design of InfOS will extend naturally to support multicore processing in a well-structured manner, and adding this support will develop InfOS further as a teaching and research tool. Unlike the Barrelfish project, which aims to explore radical new multikernel structures for operating systems, InfOS aims to take the familiar and well-established monolithic kernel structure and provide the following key contributions.
 
 \subsection{Key Contributions} \label{key-contributions}
-The object-oriented design of InfOS will extend naturally to support multicore processing in a well-structured manner, and adding this support will develop InfOS further as a teaching and research tool. If successful, this project will provide two key contributions:
-
-\begin{itemize}
-    \item A well-designed, object-oriented multicore operating system that can be easily understood by students. As discussed, multicore processing is a very pervasive field, and thoroughly understanding parallel architectures is vital for computer science students, especially those interested in systems development.
-    \item A platform on which to build further research. The multicore implementation will extend the way InfOS provides interfaces for components of the operating system, allowing experimentation with different algorithms to balance the system's workload between cores and performance optimisation. See section \ref{future-work} for further discussion.
-\end{itemize}
+\begin{description}
+    \item [Teaching contributions.] A well-designed, object-oriented multicore operating system that can be easily understood by students. As discussed, multicore processing is a very pervasive field, and thoroughly understanding parallel architectures is vital for computer science students, especially those interested in systems development. InfOS follows a conventional operating system structure, meaning that students' understanding can be mapped to larger systems such as Linux.
+    \item [Research contributions.] A platform on which to build further research. The multicore implementation will extend the way InfOS provides interfaces for components of the operating system, allowing experimentation with different algorithms for load balancing and performance optimisation. Section \ref{transition-to-multicore} noted that a modular scheduler would be beneficial for experimenting with new algorithms, and we discuss this further in section \ref{future-work}.
+\end{description}
 
 \chapter{Implementation} \label{implementation}
 
@@ -333,7 +344,7 @@ As discussed in section \ref{scalability-challenges}, in order to fully exploit 
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.15]{mandelbrot-bw.jpg}
+    \includegraphics[scale=0.17]{mandelbrot-bw.jpg}
     \caption{Black and white rendering of the Mandelbrot set \cite{mandelbrot-bw}}
     \label{mandelbrot-bw}
 \end{figure}
@@ -343,7 +354,7 @@ The Mandelbrot set is the set of complex numbers $c$ for which the recurrence re
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.6]{mandelbrot.jpg}
+    \includegraphics[scale=0.7]{mandelbrot.jpg}
     \caption{Coloured rendering of the Mandelbrot set \cite{mandelbrot-set}}
     \label{mandelbrot-vis}
 \end{figure}
@@ -356,14 +367,14 @@ I wrote a benchmark program in the userspace that computes and displays the Mand
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.6]{figures/terminal-output.jpg}
+    \includegraphics[scale=0.8]{figures/terminal-output.jpg}
     \caption{Rendering of the Mandelbrot set in the InfOS shell}
     \label{terminal-output}
 \end{figure}
 
-It is important that the function \verb|fetch_and_add| is atomic to ensure that no race conditions arise when two threads attempt to access \verb|next_pixel| at the same time. As already mentioned, InfOS does not have access to the standard C++ library with atomics support, so this \verb|fetch_and_add| function was written in userspace using x86 assembly instructions, specifically \verb|xaddl|, by Tom Spink. The use of this \verb|next_pixel| variable ensures that all threads are kept busy until the entire plane has been computed, maximising throughput. \\
+It is important that the function \verb|fetch_and_add| is atomic to ensure that no race conditions arise when two threads attempt to access \verb|next_pixel| at the same time. As already mentioned, InfOS does not have access to the standard C++ library with atomics support, so this \verb|fetch_and_add| function was written from scratch using x86 assembly instructions, specifically \verb|xaddl|. The use of this \verb|next_pixel| variable ensures that all threads are kept busy until the entire plane has been computed, maximising throughput. \\
 
-One other important point to note is that the Mandelbrot set is traditionally computed using floating point arithmetic. While InfOS does have a floating point unit, it does not routinely save and restore the floating point registers during a context switch in order to reduce switching overhead. This means that with a multithreaded execution of the benchmark, any floating point computation would be overwritten and interfered with by other threads unless the floating point state was saved. We did spend some time trying to save floating point state on a context switch with the \verb|xsave| instruction, but this turned out to be more complex than expected and we weren't able to implement this past the unicore case within the time available. Because the focus of this project is parallel computation rather than floating point arithmetic, we instead decided to implement the Mandelbrot algorithm using fixed-point arithmetic and left the floating point context switching as future work. A fixed-point number representation simply stores all values multiplied by some normalisation factor, uses integer operations for calculations, and then normalises the result when required. By choosing the multiplier to be a power of 2, I was able to compute the Mandelbrot set using only integer operations, and then use bit shifting operations to quickly perform multiplication and division when necessary. \\
+One other important point to note is that the Mandelbrot set is traditionally computed using floating point arithmetic. While InfOS does have a floating point unit, it does not routinely save and restore the floating point registers during a context switch in order to reduce switching overhead. This means that with a multithreaded execution of the benchmark, any floating point computation would be overwritten and interfered with by other threads unless the floating point state was saved. We did spend some time trying to save floating point state on a context switch with the \verb|xsave| instruction, but this turned out to be more complex than expected and we weren't able to implement this within the time available. Because the focus of this project is parallel computation rather than floating point arithmetic, we instead decided to implement the Mandelbrot algorithm using fixed-point arithmetic and left the floating point context switching as future work. A fixed-point number representation simply stores all values multiplied by some normalisation factor, uses integer operations for calculations, and then normalises the result when required. By choosing the multiplier to be a power of 2, I was able to compute the Mandelbrot set using only integer operations, and then use bit shifting operations to quickly perform multiplication and division when necessary.
 
 As already discussed, the program supported varying the number of threads alongside the number of cores, since for $x$ cores to be utilised effectively, there must be at least $x$ independent threads ready for execution. This allowed me to experiment with the following three scenarios:
 
@@ -373,34 +384,24 @@ As already discussed, the program supported varying the number of threads alongs
     \item Multicore, multithreaded
 \end{enumerate}
 
-The single core, single-threaded case provided a baseline for execution time to compare against. It was important to separate the two multithreaded cases because even in the single core case, multithreading alone can improve performance. For example, CPU throughput can be increased by replacing a blocked thread with one that is ready to execute, until the blocked thread is ready to resume execution. In order to determine if any performance difference was produced by making the Mandelbrot program multithreaded or by introducing additional cores, it was important to isolate the changes between experiments cases. The combinations of threads and cores used can be seen in figure \ref{cores-threads}, with horizontal lines separating the three cases. For each configuration, I timed the real execution time using a timing program written by Tom Spink. This timing program was verified using an external stopwatch to ensure accuracy. Each parameter configuration was executed three times, and then the execution times were averaged, to give the results shown in \ref{timing-infos-mb}. \\
+The single core, single-threaded case provided a baseline for execution time to compare against. It was important to separate the two multithreaded cases because even in the single core case, multithreading alone can improve performance. For example, CPU throughput can be increased by replacing a blocked thread with one that is ready to execute, until the blocked thread is ready to resume execution. If the system's threads are mostly I/O-bound, then multithreading alone can improve performance by increasing CPU throughput. If, however, the threads are mostly CPU-bound, then CPU throughput will already be maximised and multithreading alone should have little impact. 
+
+In order to determine if any performance difference was really caused by introducing additional cores, as opposed to making the Mandelbrot program multithreaded, it was important to isolate the changes between experiments. The combinations of threads and cores used can be seen in table \ref{timing-infos-mb}, with horizontal lines separating five distinct cases: single-core and single-threaded, single-core and multithreaded, and then multithreaded with two, three and four cores respectively. For each configuration, I timed the real execution time using a timing program written in InfOS user space. This timing program was verified using an external stopwatch to ensure accuracy before experiments began. Each parameter configuration was executed three times, and then the execution times were averaged, to give the results shown in table \ref{timing-infos-mb}.
 
 \subsection{Results} \label{mb-benchmark-results}
 todo: interpret these bad boys
+Make sure you talk about multithreading not having an impact because CPU bound - multicore made the difference!
 
-\begin{table}[h]
-    \centering
-    \begin{tabular}{cl}
-         Cores & Threads \\
-         \toprule
-         1 & 1 \\
-         \midrule
-         1 & 2, 4, 8, 16, 32 \\
-         \midrule
-         2 & 2, 4, 8, 16, 32 \\
-         3 & 2, 4, 8, 16, 32 \\
-         4 & 2, 4, 8, 16, 32 \\
-    \end{tabular}
-    \caption{Configuration of core and thread counts used for experiments}
-    \label{cores-threads}
-\end{table}
+ok so
+multithreading had no impact
+when there is less threads than cores then cores r aat idle
+performance decrease is not quite linaer - prompted to compare to linux, and then prompted to look at other ways to improve performance, experiment 1 aND 2
 
 
 \begin{table}[h]\centering
-\caption{Mandelbrot timing!}\label{timing-infos-mb}
-\scriptsize
+\normalsize
 \begin{tabular}{ccc}\toprule
-Cores &Threads &Average (s) \\
+Cores & Threads & Average time (s) \\
 \midrule
 1 &1 &9.143 \\
 \midrule
@@ -429,22 +430,31 @@ Cores &Threads &Average (s) \\
 4 &32 &2.687 \\
 \bottomrule
 \end{tabular}
+\caption{Average time taken in seconds to execute the Mandelbrot benchmark within InfOS with varying configurations of cores and threads}\label{timing-infos-mb}
 \end{table}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.4]{figures/mandelbrot-graph.png}
+    \caption{Time taken to execute the Mandelbrot benchmark by varying numbers of cores}
+    \label{mandelbrot-graph}
+\end{figure}
+
+\newpage
 \section{Scalability Benchmark}
 \label{mb-mod-benchmark}
 \subsection{Experimental Environment} 
 As expected, the more cores available to InfOS, the better the performance. However, I wanted to compare this performance scaling to a highly-developed and well-established operating system in order to visualise how efficiently InfOS uses the additional available resources. To do this, I ported the Mandelbrot benchmark into a Linux version. Since the pixels may be computed out of order, the original Mandelbrot benchmark displays the output to the terminal correctly by allowing each thread to specify exactly which $(x,y)$ point to print which colour to. There is no way to do this in standard C++ without writing additional complex functionality, so the benchmark was modified to save the pixel value to a global two-dimensional array, rather than printing the value to the screen. I controlled the number of threads by creating pthreads, and I controlled the number of cores by affining those threads to a CPU set: so in the single core case, all threads were affined to a singleton CPU set, in the dual core case, all threads were affined to a CPU set containing two cores, and so on. \\
 
-I then reran the same core and thread configurations as in table \ref{cores-threads} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{cores-threads}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-infos-mb-mod} and \ref{timing-linux-mb-mod}.
+I then reran the same core and thread configurations as in table \ref{mb-benchmark-results} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{mb-benchmark-results}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-infos-mb-mod} and \ref{timing-linux-mb-mod}.
 
 \subsection{Results}
 todo: interpret
 \begin{table}[h]
-\label{timing-infos-mb-mod}
 \parbox{.45\linewidth}{
+\label{timing-infos-mb-mod}
 \centering
-\scriptsize
+\small
 \begin{tabular}{ccc}
 \toprule
 Cores &Threads &Average (s) \\
@@ -483,7 +493,7 @@ Cores &Threads &Average (s) \\
 \parbox{.45\linewidth}{
 \centering
 \label{timing-linux-mb-mod}
-\scriptsize
+\small
 \begin{tabular}{ccc}
 \toprule
 Cores &Threads &Average (s) \\
@@ -517,23 +527,23 @@ Cores &Threads &Average (s) \\
 \end{tabular}
 \caption{linux mandelbrot modified description}
 }
+\label{timing-infos-mb-mod}
 \end{table}
 
-todo: make this less shit
-\pgfplotstabletypeset{infos-timing.txt}
-\begin{tikzpicture}
-\begin{axis}[xlabel=Number of Cores, ylabel=Time in seconds]
-\addplot table [y=Average, x=Cores]{infos-timing.txt};
-\end{axis}
-\end{tikzpicture}
-
-
-\subsection{Comparison}
-todo: Implementation comparison with Linux
-Then compare performance
-Oh wow, lovely neat structure still ahcieves the same performance
+\begin{figure}[h]
+    \centering
+    \includegraphics[scale=0.4]{figures/scalability-graph.png}
+    \caption{Performance of InfOS vs Linux on the modified Mandelbrot benchmark with varying numbers of cores}
+    \label{mandelbrot-graph}
+\end{figure}
 
 \section{Load Balancing Benchmark} \label{cache-benchmark}
+Note to Tom: this section needs reworking slightly but is still usable. I'm thinking:
+Run some basic experiments to show that the the load balancing and affinity are basically the same, and random is terrible. Can then say that would like to create a better benchmark with more varied workload (e.g. get sleeps working) and see how load balancing and cache affinity differ, right now load balancing gives cache afinity for free, wanna experiment, blah balh
+
+Will need to change the below setup description a bit
+Leads nicely into future work
+
 \subsection{Experimental Environment}
 As well as investigating how performance scaled with added resources, I wanted to evaluate the impact of different workload management on performance. Recall that section \ref{scheduling-challenges} discussed that after a thread has been running on a specific core, that core's private cache will hold relevant data to that thread. An increased number of cache hits leads to better performance, so the thread is said to have an affinity for that core. Section \ref{scheduling-challenges} also discussed the issue of keeping the workload balanced between cores, such that no one core is sitting idle while other cores are overwhelmed. With a system-wide ready queue, the load would have been naturally balanced, and with a per-core ready queue, the affinity problem would have been solved for free. However, as discussed in section \ref{scheduling-threads}, I chose to take a hybrid approach, having a global scheduling manager dispatch threads to particular cores. When a thread blocks and then becomes ready again, it goes back to the global scheduling manager, who may choose to dispatch it to a different core to resume execution. This hybrid approach allowed more flexibility for experimenting with different approaches and evaluating the impact of load balancing and processor affinity on performance. \\
 
@@ -550,6 +560,17 @@ I then needed to test these different policies on a program involving lots of th
 
 \subsection{Results}
 todo: actually run these experiments lol
+
+
+
+
+\section{Comparison}
+todo: Implementation comparison with Linux - main differences is processes & threads vs tasks, modulariation of scheduleing policies is the same, but core load balancing policies is monolithic in linux. Oh and ours is nice and OO and C++ and pretty (sorry linus) \\
+Then compare performance \\
+Oh wow, lovely neat structure still ahcieves the same performance \\
+But also, we have a lovely modular scheduler instead of a monolithic one \\
+Allows easy experiemntation with different policies -
+Leads on nicely to future work, cache-aware scheduling stuff
 
 \chapter{Future Work} \label{future-work}
 \section{Cache-aware scheduling}
