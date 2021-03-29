@@ -1,6 +1,6 @@
 % to choose your degree
 % please un-comment just one of the following
-\documentclass[bsc,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}     % for BSc, BEng etc.
+\documentclass[bsc,frontabs,singlespacing,parskip,deptreport]{infthesis}     % for BSc, BEng etc.
 % \documentclass[minf,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}  % for MInf
 \usepackage{hyperref}
 \usepackage{graphicx}
@@ -389,14 +389,7 @@ The single core, single-threaded case provided a baseline for execution time to 
 In order to determine if any performance difference was really caused by introducing additional cores, as opposed to making the Mandelbrot program multithreaded, it was important to isolate the changes between experiments. The combinations of threads and cores used can be seen in table \ref{timing-infos-mb}, with horizontal lines separating five distinct cases: single-core and single-threaded, single-core and multithreaded, and then multithreaded with two, three and four cores respectively. For each configuration, I timed the real execution time using a timing program written in InfOS user space. This timing program was verified using an external stopwatch to ensure accuracy before experiments began. Each parameter configuration was executed three times, and then the execution times were averaged, to give the results shown in table \ref{timing-infos-mb}.
 
 \subsection{Results} \label{mb-benchmark-results}
-todo: interpret these bad boys
-Make sure you talk about multithreading not having an impact because CPU bound - multicore made the difference!
-
-ok so
-multithreading had no impact
-when there is less threads than cores then cores r aat idle
-performance decrease is not quite linaer - prompted to compare to linux, and then prompted to look at other ways to improve performance, experiment 1 aND 2
-
+The baseline performance on the Mandelbrot benchmark was 9.143 seconds in the single-core, single-threaded case. The results for the single-core, multithreaded case show that introducing multithreading had very little impact on the execution time. In fact, the execution time actually increased slightly to about 9.4 seconds. This is consistent with my expectations, because the Mandelbrot program involves extensive computation and very little I/O, meaning that the threads are compute-bound. This gives no opportunity to interleave threads while other threads are waiting, so multithreading simply introduces additional overhead with no performance benefit.
 
 \begin{table}[h]\centering
 \normalsize
@@ -430,29 +423,40 @@ Cores & Threads & Average time (s) \\
 4 &32 &2.687 \\
 \bottomrule
 \end{tabular}
-\caption{Average time taken in seconds to execute the Mandelbrot benchmark within InfOS with varying configurations of cores and threads}\label{timing-infos-mb}
+\caption{Average time taken in seconds for InfOS to execute the Mandelbrot benchmark with varying numbers of cores and threads}\label{timing-infos-mb}
 \end{table}
+
+In the multicore, multithreaded case, the execution time decreases with each additional core, with the exception of the two cases highlighted in bold. In the case with three cores and two threads, the thread count is not high enough to keep all cores busy. One core must be sat idle at any given point, which is why the performance is at a similar level of the dual core case. Similarly, in the case with four cores and two threads, two cores are sat idle, and the performance is again similar to the dual core case. Again, the results show that increasing the number of threads past the number of cores does not decrease the execution time any further, due to each core already being fully utilised by the compute-bound threads.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.4]{figures/mandelbrot-graph.png}
-    \caption{Time taken to execute the Mandelbrot benchmark by varying numbers of cores}
+    \includegraphics[scale=0.35]{figures/mandelbrot-graph.png}
+    \caption{Number of cores plotted against average time taken for InfOS to execute the Mandelbrot benchmark once the thread count met or exceeded the number of cores}
     \label{mandelbrot-graph}
 \end{figure}
 
-\newpage
+It is clear to see that any performance benefit gained was the result of introducing additional cores to the system. To see the trend, I plotted the number of cores against the average performance once the thread count met or exceeded the number of cores: that is, one core one thread, two cores two threads, three cores four threads and four cores four threads. This plot is shown in figure \ref{mandelbrot-graph}. Clearly, with the introduction of additional cores, the execution time decreases, but the trend is not quite linear. I was interested to learn more about how this scaling compared to how other operating systems utilise additional cores, which led me to run a second benchmark, described in section \ref{mb-mod-benchmark}.
+
 \section{Scalability Benchmark}
 \label{mb-mod-benchmark}
 \subsection{Experimental Environment} 
-As expected, the more cores available to InfOS, the better the performance. However, I wanted to compare this performance scaling to a highly-developed and well-established operating system in order to visualise how efficiently InfOS uses the additional available resources. To do this, I ported the Mandelbrot benchmark into a Linux version. Since the pixels may be computed out of order, the original Mandelbrot benchmark displays the output to the terminal correctly by allowing each thread to specify exactly which $(x,y)$ point to print which colour to. There is no way to do this in standard C++ without writing additional complex functionality, so the benchmark was modified to save the pixel value to a global two-dimensional array, rather than printing the value to the screen. I controlled the number of threads by creating pthreads, and I controlled the number of cores by affining those threads to a CPU set: so in the single core case, all threads were affined to a singleton CPU set, in the dual core case, all threads were affined to a CPU set containing two cores, and so on. \\
+As previously mentioned, the more cores available to InfOS, the better the performance. However, I wanted to compare this performance scaling to a highly-developed and well-established operating system in order to visualise how efficiently InfOS uses the additional available resources. To do this, I ported the Mandelbrot benchmark into a Linux version. Since the pixels may be computed out of order, the original Mandelbrot benchmark displays the output to the terminal correctly by allowing each thread to specify exactly which $(x,y)$ point to print which colour to. There is no way to do this in standard C++ without writing additional complex functionality, so the benchmark was modified to save the pixel value to a global two-dimensional array, rather than printing the value to the screen. I controlled the number of threads by creating pthreads, and I controlled the number of cores by affining those threads to a CPU set: so in the single core case, all threads were affined to a singleton CPU set, in the dual core case, all threads were affined to a CPU set containing two cores, and so on.
 
-I then reran the same core and thread configurations as in table \ref{mb-benchmark-results} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{mb-benchmark-results}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-infos-mb-mod} and \ref{timing-linux-mb-mod}.
+I then reran the same core and thread configurations as in table \ref{mb-benchmark-results} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{mb-benchmark-results}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-scalability-infos} and \ref{timing-scalability-linux}.
 
 \subsection{Results}
-todo: interpret
+
+The InfOS execution times were very similar to the previous benchmark, confirming that the minor functionality changes did not alter the program's behaviour. Making a direct comparison between the results obtained on this benchmark, the Linux execution times were very similar to the InfOS execution times. The operating systems both showed almost identical behaviour to that observed in the previous section, namely:
+
+\begin{enumerate}
+    \item Multithreading in the single-core case did not impact execution time.
+    \item In the case where there were less threads than cores, performance was negatively affected by one or more cores being idle.
+    \item Increasing the number of threads past the number of cores made little further difference to performance.
+    \item With every additional core, the execution time decreased.
+\end{enumerate}
+
 \begin{table}[h]
 \parbox{.45\linewidth}{
-\label{timing-infos-mb-mod}
 \centering
 \small
 \begin{tabular}{ccc}
@@ -486,13 +490,11 @@ Cores &Threads &Average (s) \\
 4 &32 &2.451 \\
 \bottomrule
 \end{tabular}
-
-\caption{Infos mandelbrot modified description}
+\caption{Average time taken in seconds for InfOS to execute the scalability benchmark with varying numbers of cores and threads}\label{timing-scalability-infos}
 }
 \hfill
 \parbox{.45\linewidth}{
 \centering
-\label{timing-linux-mb-mod}
 \small
 \begin{tabular}{ccc}
 \toprule
@@ -525,16 +527,60 @@ Cores &Threads &Average (s) \\
 4 &32 &2.426 \\
 \bottomrule
 \end{tabular}
-\caption{linux mandelbrot modified description}
+\caption{Average time taken in seconds for Linux to execute the scalability benchmark with varying numbers of cores and threads}\label{timing-scalability-linux}
 }
-\label{timing-infos-mb-mod}
+\end{table}
+
+To compare the resource utilisation, we can look at the number of cores against the average performance once the thread count met or exceeded the number of cores for each operating system. This data is extracted and shown in table \ref{timing-scalability-abridged}. From this data, we can calculate the percentage performance increase gained with each additional core relative to the performance without the additional core. That is, we compute the percentage performance increase for two cores relative to the single-core case, with three cores relative to the dual-core case, and so on. These percentages can be seen in table \ref{timing-scalability-percentages}, and figure \ref{scalability-graph} shows this data graphically. We can see that the trend of performance against additional resources is about the same for both InfOS and Linux: that is, when given additional resources, InfOS is able to extract the same performance benefit from them that Linux can. This confirms that my multicore implementation is utilising the cores in a sensible way, but it is still not the near-linear trend that multiple cores have the potential to provide, as suggested by my literature review in section \ref{towards-multicore}.
+
+I would expect to see better? ....... led me to do further experiments?
+
+
+\begin{table}[h]
+\parbox{.45\linewidth}{
+\centering
+\footnotesize
+\begin{tabular}{cccc}\toprule
+Cores & Threads & InfOS & Linux \\
+& & average & average \\
+& & time (s) & time (s) \\
+\midrule
+1 & 1 & 9.210 & 8.937 \\
+\midrule
+2 & 2 & 4.539 & 4.584 \\
+\midrule
+3 & 4 & 3.228 & 3.079 \\
+\midrule
+4 & 4 & 2.429 & 2.432 \\
+\bottomrule
+\end{tabular}
+\caption{Average time taken in seconds for InfOS and Linux to execute the scalability benchmark once the thread count met or exceeded the number of cores}\label{timing-scalability-abridged}
+}
+\hfill
+\parbox{.45\linewidth}{
+\centering
+\footnotesize
+\begin{tabular}{cccc}\toprule
+Cores & Threads & InfOS & Linux \\
+& & performance & performance \\
+& & increase & increase \\
+\midrule
+2 & 2 & 50.72\% & 48.71\% \\
+\midrule
+3 & 4 & 28.88\% & 32.83\% \\
+\midrule
+4 & 4 & 24.75\% & 21.01\% \\
+\bottomrule
+\end{tabular}
+\caption{Performance increase with every additional core relative to performance immediately prior to adding that core}\label{timing-scalability-percentages}
+}
 \end{table}
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.4]{figures/scalability-graph.png}
-    \caption{Performance of InfOS vs Linux on the modified Mandelbrot benchmark with varying numbers of cores}
-    \label{mandelbrot-graph}
+    \includegraphics[scale=0.3]{figures/scalability-graph.png}
+    \caption{Number of cores plotted against average time taken for InfOS and Linux to execute the scalability benchmark once the thread count met or exceeded the number of cores}
+    \label{scalability-graph}
 \end{figure}
 
 \section{Load Balancing Benchmark} \label{cache-benchmark}
