@@ -1,59 +1,35 @@
-% to choose your degree
-% please un-comment just one of the following
-\documentclass[bsc,frontabs,singlespacing,parskip,deptreport]{infthesis}     % for BSc, BEng etc.
-% \documentclass[minf,frontabs,twoside,singlespacing,parskip,deptreport]{infthesis}  % for MInf
-\usepackage{hyperref}
-\usepackage{graphicx}
-\usepackage{booktabs, multirow} % for borders and merged ranges
-\usepackage{soul}% for underlines
-\usepackage[table]{xcolor} % for cell colors
-\usepackage{changepage,threeparttable} % for wide tables
-\usepackage{pgfplots}
-\usepackage{csquotes}
+% Do not change the options here
+\documentclass[bsc,frontabs,singlespacing,parskip,deptreport]{infthesis}
 
+% shield
+% \usepackage{eushield}
+% \documentclass[bsc,singlespacing,parskip,logo]{infthesis}     % for BSc, BEng
+
+\usepackage{hyperref, csquotes}
+\usepackage{graphicx}
+\usepackage{booktabs, multirow}
 \graphicspath{ {./figures/} }
 
 \begin{document}
+\begin{preliminary}
 
 \title{Multicore Processing Support \\ for a Research Operating System}
 
 \author{Kimberley Stonehouse}
 
-% to choose your course
-% please un-comment just one of the following
-% \course{Artificial Intelligence and Computer Science}
-%\course{Artificial Intelligence and Software Engineering}
-%\course{Artificial Intelligence and Mathematics}
-%\course{Artificial Intelligence and Psychology }   
-%\course{Artificial Intelligence with Psychology }   
-%\course{Linguistics and Artificial Intelligence}    
 \course{Computer Science}
-%\course{Software Engineering}
-%\course{Computer Science and Electronics}    
-%\course{Electronics and Software Engineering}    
-%\course{Computer Science and Management Science}    
-%\course{Computer Science and Mathematics}
-%\course{Computer Science and Physics}  
-%\course{Computer Science and Statistics}    
 
-% to choose your report type
-% please un-comment just one of the following
-%\project{Undergraduate Dissertation} % CS&E, E&SE, AI&L
-%\project{Undergraduate Thesis} % AI%Psy
 \project{4th Year Project Report}
 
 \date{\today}
 
 \abstract{
-This is an example of {\tt infthesis} style.
-The file {\tt skeleton.tex} generates this document and can be 
-used to get a ``skeleton'' for your thesis.
-The abstract should summarise your report and fit in the space on the 
-first page.
-%
-You may, of course, use any other software to write your report,
-as long as you follow the same style. That means: producing a title
-page as given here, and including a table of contents and bibliography.
+This skeleton demonstrates how to use the \texttt{infthesis} style for
+undergraduate dissertations in the School of Informatics. It also emphasises the
+page limit, and that you must not deviate from the required style.
+The file \texttt{skeleton.tex} generates this document and can be used as a
+starting point for your thesis. The abstract should summarise your report and
+fit in the space on the first page.
 }
 
 \maketitle
@@ -62,41 +38,49 @@ page as given here, and including a table of contents and bibliography.
 Acknowledgements go here. 
 
 \tableofcontents
-
-%\pagenumbering{arabic}
-
+\end{preliminary}
 
 \chapter{Introduction}
 
-The document structure should include:
+The preliminary material of your report should contain:
 \begin{itemize}
 \item
-The title page  in the format used above.
+The title page.
 \item
-An optional acknowledgements page.
+An abstract page.
+\item
+Optionally an acknowledgements page.
 \item
 The table of contents.
-\item
-The report text divided into chapters as appropriate.
-\item
-The bibliography.
 \end{itemize}
 
-Commands for generating the title page appear in the skeleton file and
-are self explanatory.
-The file also includes commands to choose your report type (project
-report, thesis or dissertation) and degree.
-These will be placed in the appropriate place in the title page. 
+As in this example \texttt{skeleton.tex}, the above material should be
+included between:
+\begin{verbatim}
+\begin{preliminary}
+    ...
+\end{preliminary}
+\end{verbatim}
+This style file uses roman numeral page numbers for the preliminary material.
 
-The default behaviour of the documentclass is to produce documents typeset in
-12 point.  Regardless of the formatting system you use, 
-it is recommended that you submit your thesis printed (or copied) 
-double sided.
+The main content of the dissertation, starting with the first chapter,
+starts with page~1. \emph{\textbf{The main content must not go beyond page~40.}}
 
-The report should be printed single-spaced.
-It should be 30 to 60 pages long, and preferably no shorter than 20 pages.
-Appendices are in addition to this and you should place detail
-here which may be too much or not strictly necessary when reading the relevant section.
+The report then contains a bibliography and any appendices, which may go beyond
+page~40. The appendices are only for any supporting material that's important to
+go on record. However, you cannot assume markers of dissertations will read them.
+
+You may not change the dissertation format (e.g., reduce the font size, change
+the margins, or reduce the line spacing from the default 1.5 spacing). Be
+careful if you copy-paste packages into your document preamble from elsewhere.
+Some \LaTeX{} packages such as \texttt{geometry}, \texttt{fullpage}, or
+\texttt{savetrees} change the margins of your document. Do not include them!
+
+Over length or incorrectly-formatted dissertations will not be accepted and you
+would have to modify your dissertation and resubmit. You cannot assume we will
+check your submission before the final deadline and if it requires resubmission
+after the deadline to conform to the page and style requirements you will be
+subject to the usual late penalties based on your final submission time.
 
 \section{Using Sections}
 
@@ -104,26 +88,12 @@ Divide your chapters into sub-parts as appropriate.
 
 \section{Citations}
 
-Note that citations 
-(like \cite{P1} or \cite{P2})
-can be generated using {\tt BibTeX} or by using the
-{\tt thebibliography} environment. This makes sure that the
-table of contents includes an entry for the bibliography.
-Of course you may use any other method as well.
+Citations (such as \cite{P1} or \cite{P2}) can be generated using
+\texttt{BibTeX}. For more advanced usage, the \texttt{natbib} package is
+recommended. You could also consider the newer \texttt{biblatex} system.
 
-\section{Options}
-
-There are various documentclass options, see the documentation.  Here we are
-using an option ({\tt bsc} or {\tt minf}) to choose the degree type, plus:
-\begin{itemize}
-\item {\tt frontabs} (recommended) to put the abstract on the front page;
-\item {\tt twoside} (recommended) to format for two-sided printing, with
-  each chapter starting on a right-hand page;
-\item {\tt singlespacing} (required) for single-spaced formating; and
-\item {\tt parskip} (a matter of taste) which alters the paragraph formatting so that
-paragraphs are separated by a vertical space, and there is no
-indentation at the start of each paragraph.
-\end{itemize}
+These examples use a numerical citation style. You may also use
+(Author, Date) format if you prefer.
 
 \chapter{Background}
 
@@ -284,7 +254,7 @@ InfOS has an object-oriented design, with each of the major components of the op
 \begin{description}
 \item [Detecting cores.] QEMU \cite{qemu} is a virtualisation environment that can be used to boot real operating systems in a virtual machine, and was used throughout development to emulate running InfOS. This allowed me to easily configure the processor architecture to emulate, specifically the number of cores. The first milestone, then, was to supply InfOS with multiple cores and detect those cores during boot up.
 
-\item [Initialising cores.] As previously mentioned, the x86 ISA defines a MP initialisation protocol, which defines two classes of processors, the bootstrap processor (BSP) and application processors (APs). The BSP runs the main operating system boot code, and is responsible for the previous detection of other cores. When the AP cores boot, they are initially in a waiting state, so the BSP is also responsible for sending IPIs to those APs to give them something to do. The role of initialising the cores, then, is to give them a stack and a memory address to start execution at. For the purpose of this milestone, the code can be general code, such as “Hello world from core x!”.
+\item [Initialising cores.] Recall from section \ref{architectural-challenges} that the x86 ISA defines a MP initialisation protocol, which defines two classes of processors, the bootstrap processor (BSP) and application processors (APs). The BSP runs the main operating system boot code, and is responsible for the previous detection of other cores. When the AP cores boot, they are initially in a waiting state, so the BSP is also responsible for sending IPIs to those APs to give them something to do. The role of initialising the cores, then, is to give them a stack and a memory address to start execution at. For the purpose of this milestone, the code can be general code, such as “Hello world from core x!”.
 
 \item[Calibrating timers.] InfOS already supports preemptive scheduling. This is achieved by LAPICTimer interrupts every 4 milliseconds triggering a scheduling event. Therefore, each core’s timer had to be calibrated and initialised to send periodic interrupts. The calibration code determines the frequency of the timer by measuring it against the programmable interrupt timer (PIT), meaning that the calibration code must be executed on the core itself to determine the correct frequency. Therefore, it made sense to do the timer calibration once each core was awake and running general code, and this was the third milestone.  
 
@@ -337,7 +307,7 @@ The sequence described above needs to be done for each core individually, and th
 All of the code described above is contained within two small methods, \verb|cpu_init| and \verb|start_core|, which are executed during the boot process by the BSP. The function \verb|cpu_init| requests a reference to the BSP's LAPIC object and the Programmable Interval Timer (PIT) from the device manager. It then retrieves the list of cores from the device manager and iterates through them, calling \verb|start_core| whenever a core should be initialised. The LAPIC object has methods \verb|send_remote_init| and \verb|send_remote_sipi| that write the appropriate values to the LAPIC registers to generate the IPIs, and the BSP calls these functions on its own LAPIC object within the \verb|start_core| function. The PIT has a function \verb|spin| which initialises one-shot mode (see section \ref{calibrating-timers}) and issues \verb|nop| instructions until the timer stops. This function is used when the BSP needs to wait a certain number of milliseconds as described above.
 
 \section{Calibrating Timers} \label{calibrating-timers}
-As previously mentioned, each AP has an LAPIC and an LAPICTimer, and these need to be initialised and registered with the device manager. This initialisation involves reading and writing the LAPIC registers, so it had to be delayed until the APs were executing code so that it could be done locally. The first step is to create an LAPIC object for the AP and register it with the device manager. Since every core in the system would be repeating this, it made sense to write a method \verb|lapic_init| within the core object. This method reads the LAPIC base address collected when parsing the MADT tables, creates an LAPIC object and registers it with the device manager. All device objects must implement a method \verb|init|, which the device manager calls when registering a new device. To enable the LAPIC to receive interrupts, it is necessary to configure the Spurious Interrupt Vector Register with the IRQ number to map spurious interrupts to, so the LAPIC \verb|init| function does this. Finally, since the LAPIC object is needed whenever the core wants to read its LAPIC registers or send IPIs, the core object also stores a reference to its LAPIC object. 
+Recall that each AP has an LAPIC and an LAPICTimer. These need to be initialised and registered with the device manager. This initialisation involves reading and writing the LAPIC registers, so it had to be delayed until the APs were executing code so that it could be done locally. The first step is to create an LAPIC object for the AP and register it with the device manager. Since every core in the system would be repeating this, it made sense to write a method \verb|lapic_init| within the core object. This method reads the LAPIC base address collected when parsing the MADT tables, creates an LAPIC object and registers it with the device manager. All device objects must implement a method \verb|init|, which the device manager calls when registering a new device. To enable the LAPIC to receive interrupts, it is necessary to configure the Spurious Interrupt Vector Register with the IRQ number to map spurious interrupts to, so the LAPIC \verb|init| function does this. Finally, since the LAPIC object is needed whenever the core wants to read its LAPIC registers or send IPIs, the core object also stores a reference to its LAPIC object. 
 
 Once the LAPIC object has been created, it can be used to create and calibrate the LAPICTimer object. Since InfOS is preemptive, each AP's LAPICTimer needs to be initialised to tick periodically, generating timer interrupts to tell the AP when to schedule. The LAPICTimer has two modes. Periodic mode has an initial count set by software, and the LAPICTimer decrements this count until it reaches zero, generates an interrupt and then resets the current count to the initial count and begins decrementing again. One-shot mode decrements the initial count in the same way as periodic mode and generates an interrupt when it reaches zero, but it does not reset the current count. If another one-shot interrupt is required, the software must set the initial count again. The advantage of each core having an LAPICTimer is that cores don't have to share the Programmable Interval Timer (PIT) which lies on a separate circuit. The disadvantage is that while the PIT uses a standard frequency, the LAPICTimer's frequency varies from machine to machine, so it must be determined before the LAPICTimer can be used \cite{osdev-apic-timer}. To do this, the LAPICTimer can be reset to a well-known state and calibrate itself using the PIT as a reference timer. 
 
@@ -345,14 +315,31 @@ I defined a second function within the core object, \verb|timer_init|, to do thi
 
 In section \ref{initialising-cores}, I mentioned that it was important to record which core is the BSP. This is because in the unicore case, the kernel updated the system runtime with 4ms on every timer interrupt happened. However, with multiple cores, this would be done for every 4ms for every core, making the system runtime wrong. Within the timer interrupt handler, I retrieved the current core object by calling the static method \verb|get_current_core| in the \verb|Core| class, and added a conditional to only update the system runtime if the state of the current core is bootstrap.
 
-As before, the above steps needed to be done for each core, and it seemed natural to have all cores initialising themselves in parallel. However, since each AP accesses the device manager during initialisation and uses the PIT to calibrate its timer, my implementation needed to synchronise access to these objects. To further complicate matters, the BSP uses the PIT while waiting for an AP to set the ready flag, so a previously started AP could be using the PIT to calibrate while the BSP is spinning waiting for the AP to come online. I initially tried protecting the PIT and the device manager with mutex locks. On trying to acquire a lock that is already held, the thread will yield the CPU and check again when it next runs. However, the cores were not set up to do this yet ....
-Went for simple spinlock, busy wait while doing. Could have set this up to have mutexes to slightly improve efficiency since CPU not busy waiting,  but would have required rearchitecture of the system and possibly sacrifice readability, which we are deliberately aiming for
+Again, the above timer calibration steps needed to be done for each core. This time, it seemed natural to have all cores initialising themselves in parallel since the initialisation was done locally on the core itself. The only consideration was regarding synchronising access to the PIT and the device manager. This was necessary because each core registers devices with the device manager, which involves modifying a global list of devices, and because each core uses the PIT to calibrate its LAPICTimer. Furthermore, recall that the BSP uses the PIT for spin delays while initialising the APs, which increases contention on the PIT. For example, a previously started AP could be using the PIT to calibrate while the BSP is spinning waiting for the next AP to come online. I addressed this by protecting the PIT and the global devices list with two spinlocks. When the device manager wishes to add a device to the list, the device manager lock is acquired, the device is added, and then the lock is released. When the PIT function \verb|start| is called, the PIT lock is acquired, and when the PIT function \verb|stop| or \verb|reset| is called, the lock is released. The PIT functions \verb|spin| and \verb|init_oneshot|, used by the BSPs and the APs respectively, then utilise these \verb|start|, \verb|stop| and \verb|reset| functions.
+
+One optimisation here would be to use mutexes rather than spinlocks. The difference is that when a spinlock cannot be acquired, it enters a busy waiting period, which is essentially where the lock is tested in a loop until it can be acquired. When a mutex cannot be acquired, the thread trying to acquire the lock will yield the processor, and the lock will not be tested again until the thread gets its next timeslice. This means that while a thread is waiting for the lock, CPU cycles are not being wasted on busy waiting, but instead are being used to make progress on other threads. However, yielding requires the thread's context to be saved and a schedule event to occur. At this point, the scheduler has not yet been adapted to handle the multiple cores, so a mutex is not a viable option. If the scheduler was initialised before the timers, this would have been possible, but this would have required significant rearchitecture of the system's boot process, possibly sacrificing readability. The use of spinlocks here is acceptable, since the spinlock will only be held for a very short period of time, limiting the impact on the system's performance.
 
 \section{Scheduling Threads} \label{scheduling-threads}
-One scheduler per core!
+Once the cores were taking timer interrupts at the correct frequency, the final piece of the puzzle was to configure a scheduling event to happen on these interrupts. Section \ref{scheduling-challenges} mentioned that there are two approaches to scheduling: either a per-core runqueue, or a system-wide runqueue. A system-wide runqueue would have to be protected with locking to prevent race conditions. However, locking adds significant overhead, since it prevents any of the other cores from progressing while one core holds the lock. This overhead would be included in every schedule event, which happens on every AP's timer tick, or every 4 milliseconds. The more cores in the system, the more critical this bottleneck becomes. With scalability in mind, the only realistic option is therefore to have multiple, per-core runqueues.
+
+Before discussing my implementation, I will explain how InfOS previously handled scheduling in the unicore case. Processes were represented as a class, and were each allocated an area of virtual memory. The process then had a variable \verb|main_thread| that was initialised when the process was created. The process also had a list of thread objects, allowing processes to be multithreaded if required, and a method \verb|create_thread| that allowed adding new threads. Threads therefore existed within the context of a process, and shared the address space with other threads belonging to the same process. Threads were also represented as an object, with a reference back to their process parent and an associated stack and context. InfOS focuses on threads when scheduling, and the thread class is wrapped with a scheduling entity class that holds properties such as the current runtime and the scheduling state. The scheduling state could be either \verb|STOPPED|, \verb|SLEEPING|, \verb|RUNNABLE| or \verb|RUNNING|.
+
+There was one global scheduler object with a reference to a scheduling algorithm, which was an interface that managed the system-wide runqueue. The interface provided methods such as \verb|pick_next_task|, \verb|add_to_runqueue| and \verb|remove_from_runqueue|. Different scheduling policies, such as first-in-first-out, round-robin, or Linux's CFS could then implement the interface, and the user could select between them at boot-time using command line arguments. The scheduling algorithm worked with scheduling entity objects, meaning that although InfOS currently schedules threads only, the concepts are kept separate and InfOS could easily be switched to schedule processes (like Windows), or processes and threads (like Linux).
+
+The scheduler initialisation happened during boot, and involved creating the scheduler object, an idle process and an idle thread, with the idle thread essentially being a function that pauses indefinitely. The idle thread was then activated, which set a global variable \verb|current_thread| to be that thread. This means that when the scheduler started running, the context that began being saved and restored was that of the idle thread. Once the kernel had finished the boot process, a \verb|run| function was called on the global scheduler, which essentially activated the first eligible thread, which would likely be the idle task. From that point onwards, on every timer tick, a function \verb|schedule| was called on the scheduler, and this function requested the next entity from the scheduling algorithm via \verb|pick_next_entity|. If the runqueue was empty, the algorithm returned \verb|NULL|, and the scheduler continued to schedule the idle thread. Otherwise, if a new thread had been created and added to the runqueue, the algorithm would return this and the scheduler would need to perform a context switch. This was done using the global \verb|current_thread| variable mentioned earlier, by saving the context of the previous thread and setting the variable to be the new thread. Naturally, this global variable would need to be refactored to support multiple cores, otherwise they would overwrite each other's current thread.
+
+In order to support the per-core runqueues but maintain the object-oriented structure, I decided to have one scheduler object per core. I refactored the core class to hold a reference to this scheduler object, and refactored the scheduler object to hold the \verb|current_thread| variable, rather than having one global \verb|current_thread|. Rather than initialising the scheduler once at the beginning of the boot process, the scheduler of each core needed to be created and initialised with an idle task as above. However, the BSP needed a functioning scheduler before initialising the APs in order to schedule the kernel thread running the boot code. I refactored the original scheduler initialisation code to initialise the BSP's scheduler rather than a global scheduler, and then delayed the AP scheduler initialisation until later in the boot process when the APs were online.
+
+I do this scheduler initialisation as soon as the APs are online and executing code, so at the same time as the timer initialisation in section \ref{calibrating-timers}. They call the \verb|init| function on their scheduler object, which creates a new idle process and thread for that core and activates it. Then, they call \verb|run| to activate their schedulers once all initialisation has been completed, and this represents the point at which the core is fully initialised and begins scheduling threads. On every timer tick, rather than calling \verb|schedule| on the global scheduler, the function \verb|get_current_core| returns the current core object, which is then used to get a reference to the current scheduler. The function \verb|schedule| is then called to select a new task for that specific core, and perform the context switch as before.
+
+When a thread was created previously, it would be added to the runqueue of the global scheduler object. With the removal of this object, there needed to be some way for new threads, or threads waking up from sleep, to be scheduled onto some core. I could have just added the thread to the runqueue of whatever core created it, but this would be a really obvious way to create a workload imbalance. When InfOS boots, the shell launches and waits for the user to run a program. The shell thread would likely be running on the BSP core, and then any program that the user launched would also be added to the BSP's runqueue, while all other cores sit idle. The system needs some sort of global scheduling manager to distribute new tasks between cores, and then once a thread is assigned to a core, the core's individual scheduling algorithm can be responsible for distributing that core's cycles between the threads on that core's runqueue.
+
+I created a global scheduling manager class which maintains a list of all schedulers in the system. On initialisation, each scheduler now registers itself with the scheduling manager, and this global scheduler list is protected with a mutex lock. When a new thread is created or awoken, the thread is passed to the scheduling manager, who then selects a scheduler and dispatches the task to that scheduler. I chose to mimic the abstraction provided by the scheduling algorithm class, and created a core algorithm command line parameter. The user can then specify how tasks should be distributed between cores, whether that be randomly or by some other metric (discussed further in section \ref{cache-benchmark}). This modular functionality allows easy customisation and fine-tuning of the scheduler's policy to tailor the system's performance to its workload.
+
+Todo: Something about IDT and GDT \\
+Also, all use the same type of  sched algorithm (different instances), created at boot. Could possibly be refactored to have different cores use different policies if there was some desire for that
 
 \chapter{Evaluation}
-
 As discussed in section \ref{scalability-challenges}, in order to fully exploit the processing power of multiple cores, software needs to be highly adapted to a parallel execution environment. An embarrassingly parallel problem is one where very little effort is needed to divide the original task into a set of almost independent parallel tasks, and such problems are both pervasive in computing and well-suited to exploiting parallel architectures. 
 
 \begin{figure}[h]
@@ -546,8 +533,6 @@ Cores &Threads &Average (s) \\
 
 To compare the resource utilisation, we can look at the number of cores against the average performance once the thread count met or exceeded the number of cores for each operating system. This data is extracted and shown in table \ref{timing-scalability-abridged}. From this data, we can calculate the percentage performance increase gained with each additional core relative to the performance without the additional core. That is, we compute the percentage performance increase for two cores relative to the single-core case, with three cores relative to the dual-core case, and so on. These percentages can be seen in table \ref{timing-scalability-percentages}, and figure \ref{scalability-graph} shows this data graphically. We can see that the trend of performance against additional resources is about the same for both InfOS and Linux: that is, when given additional resources, InfOS is able to extract the same performance benefit from them that Linux can. This confirms that my multicore implementation is utilising the cores in a sensible way, but it is still not the near-linear trend that multiple cores have the potential to provide, as suggested by my literature review in section \ref{towards-multicore}.
 
-I would expect to see better? ....... led me to do further experiments? We achieved our goals here, but this gives way to future work?
-
 
 \begin{table}[h]
 \parbox{.45\linewidth}{
@@ -596,12 +581,25 @@ Cores & Threads & InfOS & Linux \\
     \label{scalability-graph}
 \end{figure}
 
-\section{Load Balancing Benchmark} \label{cache-benchmark}
-Note to Tom: this section needs reworking slightly but is still usable. I'm thinking:
-Run some basic experiments to show that the the load balancing and affinity are basically the same, and random is terrible. Can then say that would like to create a better benchmark with more varied workload (e.g. get sleeps working) and see how load balancing and cache affinity differ, right now load balancing gives cache afinity for free, wanna experiment, blah balh
+\section{Conclusion}
+todo: Implementation comparison with Linux - main differences is processes \& threads vs tasks, modulariation of scheduling policies is the same, but core load balancing policies is monolithic in linux. Oh and ours is nice and OO and C++ and pretty (sorry linus). Will do this once implementation is written. Then compare performance \\
 
-Will need to change the below setup description a bit
-Leads nicely into future work
+Main discussion: did we achieve our initial goals? Yes, it's nicely designed and achieves same performance as Linux. But also, we have a lovely modular scheduler instead of a monolithic one. Allows easy experiemntation with different policies, which then leads on nicely to future work, cache-aware scheduling stuff
+
+Also, going to publish this. Merge the changes into infos repo, used for next year's cw
+
+\chapter{Future Work} \label{future-work}
+\section{Cache-aware scheduling}
+
+\section{Load Balancing Benchmark} \label{cache-benchmark}
+
+
+I would expect to see better? ....... led me to do further experiments? We achieved our goals here, but this gives way to future work?
+Note to Tom: this section needs reworking but I think it can be used in some form. I could either: \\
+Run some basic experiments to show that the the load balancing and affinity are basically the same, and random is terrible. Can then say that would like to create a better benchmark with more varied workload (e.g. get sleeps working) and see how load balancing and cache affinity differ, right now load balancing gives cache afinity for free, wanna experiment, etc etc \\
+
+or:
+Describe the experimental set up and say we didn't quite get it working in time but for future work we would want to test on this type of benchmark... might be more interesting than just some basic results? Could in fact take this whole discussion about affinity and load bal (all of section 4.4) and move it down to the future work section, after the conclusion... would then lead nicely into future work?
 
 \subsection{Experimental Environment}
 As well as investigating how performance scaled with added resources, I wanted to evaluate the impact of different workload management on performance. Recall that section \ref{scheduling-challenges} discussed that after a thread has been running on a specific core, that core's private cache will hold relevant data to that thread. An increased number of cache hits leads to better performance, so the thread is said to have an affinity for that core. Section \ref{scheduling-challenges} also discussed the issue of keeping the workload balanced between cores, such that no one core is sitting idle while other cores are overwhelmed. With a system-wide ready queue, the load would have been naturally balanced, and with a per-core ready queue, the affinity problem would have been solved for free. However, as discussed in section \ref{scheduling-threads}, I chose to take a hybrid approach, having a global scheduling manager dispatch threads to particular cores. When a thread blocks and then becomes ready again, it goes back to the global scheduling manager, who may choose to dispatch it to a different core to resume execution. This hybrid approach allowed more flexibility for experimenting with different approaches and evaluating the impact of load balancing and processor affinity on performance. \\
@@ -618,35 +616,46 @@ InfOS already supported choosing the individual scheduling policy (e.g. round-ro
 I then needed to test these different policies on a program involving lots of thread migration and lots of cache accesses. I wrote a benchmark loosely inspired by the Bitcoin proof-of-work algorithm \cite{proof-of-work}, which has a global integer array and a number of threads. Each thread is allocated one section of the array and must repeatedly compute the hash of this section, where the hash is essentially the sum of the elements in the section with some salt value. The salt is incremented on every iteration, which increases the sum until the hash exceeds a certain value. Dividing the array between the threads and requiring repeated calculation of the sum means that each thread is repeatedly accessing the same data, which would benefit from being in the core's private cache. In order to simulate blocking for I/O or waiting for some other event, after each calculation, the thread calls yield to stop executing on the current CPU and return to the global scheduling manager, who can then decide which core to dispatch the task to. This benchmark means that each thread is essentially accessing the same data repeatedly, but potentially migrating between cores and losing access to cached data. \\
 
 \subsection{Results}
-todo: actually run these experiments lol
+todo: actually run these experiments lol.\\
 
-
-
-
-\section{Comparison}
-todo: Implementation comparison with Linux - main differences is processes & threads vs tasks, modulariation of scheduleing policies is the same, but core load balancing policies is monolithic in linux. Oh and ours is nice and OO and C++ and pretty (sorry linus). Will do this once implementation is written. \\
-Then compare performance \\
-
-\section{Conclusion}
-Main discussion: did we achieve our final goals?
-Yes, it's nicely desgined nad achives same performance as Linux. 
-Oh wow, lovely neat structure still ahcieves the same performance \\
-But also, we have a lovely modular scheduler instead of a monolithic one \\
-Allows easy experiemntation with different policies -
-Leads on nicely to future work, cache-aware scheduling stuff
-
-\chapter{Future Work} \label{future-work}
-\section{Cache-aware scheduling}
+Or, just discuss what experiment we would do as future work? Not sure
 todo: add in papers tom mentioned
-Basically we now have a reserach platform to experiemnt intelligent scheduling approaches with
+Basically we now have a research platform to experiment intelligent scheduling approaches with
 
 \section{Floating Point}
 maybe remove
 
+\chapter{Conclusions}
 
-% use the following and \cite{} as above if you use BibTeX
-% otherwise generate bibtem entries
+\section{Final Reminder}
+
+The body of your dissertation, before the references and any appendices,
+\emph{must} finish by page~40. The introduction, after preliminary material,
+should have started on page~1.
+
+You may not change the dissertation format (e.g., reduce the font size, change
+the margins, or reduce the line spacing from the default 1.5 spacing). Be
+careful if you copy-paste packages into your document preamble from elsewhere.
+Some \LaTeX{} packages such as \texttt{geometry}, \texttt{fullpage}, or
+\texttt{savetrees} change the margins of your document. Do not include them!
+
+Over length or incorrectly-formatted dissertations will not be accepted and you
+would have to modify your dissertation and resubmit. You cannot assume we will
+check your submission before the final deadline and if it requires resubmission
+after the deadline to conform to the page and style requirements you will be
+subject to the usual late penalties based on your final submission time.
+
 \bibliographystyle{plain}
 \bibliography{mybibfile}
+
+%% You can include appendices like this:
+% \appendix
+%
+% \chapter{First appendix}
+%
+% \section{First section}
+%
+% Markers do not have to consider appendices. Make sure that your contributions
+% are made clear in the main body of the dissertation (within the page limit).
 
 \end{document}
