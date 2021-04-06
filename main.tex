@@ -168,7 +168,7 @@ The decision of which thread to execute next is made by the scheduling policy. I
 \subsection{Synchronisation} \label{synchronisation-challenges}
 With multiple threads executing concurrently and sharing data, if care is not taken, the result of execution can be dependent on the particular order in which memory accesses take place. This is called a race condition, and means that the result of execution is non-deterministic, leading to errors that only appear intermittently. Note that if preemptive scheduling is used, race conditions are a problem even in the unicore case. To see this, consider the case when one thread only partially completes execution before it is interrupted and another one is scheduled. If they are operating on the same data, the interleaving of operations may affect the final result. Adding multiple cores into the system only exacerbates this problem further, since now, two threads can access the same data in a true parallel fashion, and which one gets there first is unpredictable. 
 
-The OS must provide some method of synchronisation in order to guarantee the outcome of a particular execution. It can do this using the notion of a critical region, which is the section of code where a thread is modifying shared data. Locking primitives such as spinlocks and mutexes can be used to enforce the following: if a thread wants to enter its critical region, it must wait until no other thread is executing in its critical region. The implementation of these locking primitives relies on atomic assembly instructions, that is, instructions that can be executed as one, uninterruptable unit. If this is not the case, the locking primitives themselves may be subject to race conditions. The x86 ISA provides these atomic instructions, and the C++ standard library uses them to implement an atomics library.
+The OS must provide some method of synchronisation in order to guarantee the outcome of a particular execution. It can do this using the notion of a critical section, which is the region of code where a thread is modifying shared data. Locking primitives such as spinlocks and mutexes can be used to enforce the following: if a thread wants to enter its critical region, it must wait until no other thread is executing in its critical region. The implementation of these locking primitives relies on atomic assembly instructions, that is, instructions that can be executed as one, uninterruptable unit. If this is not the case, the locking primitives themselves may be subject to race conditions. The x86 ISA provides these atomic instructions, and the C++ standard library uses them to implement an atomics library.
 
 \subsection{Scalability} \label{scalability-challenges}
 Another challenge is fully exploiting the performance improvements offered by multicore architectures. Amdahl’s law \cite{DBLP:conf/afips/Amdahl67} \cite{DBLP:journals/computer/Amdahl13} states that the potential speedup to be gained by using multiple processors is bounded by the amount of program code that is inherently sequential. That is, to fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment, and this is not a trivial task. Existing software contains a substantial amount of sequential code and must be refactored to suit a parallel execution environment. Rewriting legacy code in a parallel manner is incredibly difficult and time-consuming, and some must be left as it was originally written to preserve the function \cite{geer}. Parallelising compilers initially looked promising \cite{lamport}, but there has been a lack of success in automatic parallelisation. Techniques for extracting parallelism automatically are still an ongoing area of research, but are yet to be widespread \cite{franke}. Parallel programming from the outset is also challenging. Expert programmers must explicitly divide tasks into threads that can be run concurrently and avoid synchronisation issues while doing so \cite{geer}. 
@@ -196,7 +196,7 @@ The developers had only intended to use BKL to ease the initial transition to mu
 In terms of scheduling, the unicore case was largely considered to be a solved problem. In fact, when discussing Linux's transition to multicore scheduling, Linus Torvalds said:
 
 \begin{displayquote}
-"I suspect that making the
+``I suspect that making the
 scheduler use per-CPU queues together with some inter-CPU load balancing
 logic is probably trivial. Patches already exist, and I don't feel that
 people can screw up the few hundred lines too badly." \cite{lwn-sched-easy}
@@ -334,7 +334,7 @@ I do this scheduler initialisation as soon as the APs are online and executing c
 
 When a thread was created previously, it would be added to the runqueue of the global scheduler object. With the removal of this object, there needed to be some way for new threads, or threads waking up from sleep, to be scheduled onto some core. I could have just added the thread to the runqueue of whatever core created it, but this would be a really obvious way to create a workload imbalance. When InfOS boots, the shell launches and waits for the user to run a program. The shell thread would likely be running on the BSP core, and then any program that the user launched would also be added to the BSP's runqueue, while all other cores sit idle. The system needs some sort of global scheduling manager to distribute new tasks between cores, and then once a thread is assigned to a core, the core's individual scheduling algorithm can be responsible for distributing that core's cycles between the threads on that core's runqueue.
 
-I created a global scheduling manager class which maintains a list of all schedulers in the system. On initialisation, each scheduler now registers itself with the scheduling manager, and this global scheduler list is protected with a mutex lock. When a new thread is created or awoken, the thread is passed to the scheduling manager, who then selects a scheduler and dispatches the task to that scheduler. I chose to mimic the abstraction provided by the scheduling algorithm class, and created a core algorithm command line parameter. The user can then specify how tasks should be distributed between cores, whether that be randomly or by some other metric (discussed further in section \ref{cache-benchmark}). This modular functionality allows easy customisation and fine-tuning of the scheduler's policy to tailor the system's performance to its workload.
+I created a global scheduling manager class which maintains a list of all schedulers in the system. On initialisation, each scheduler now registers itself with the scheduling manager, and this global scheduler list is protected with a mutex lock. When a new thread is created or awoken, the thread is passed to the scheduling manager, who then selects a scheduler and dispatches the task to that scheduler. I chose to mimic the abstraction provided by the scheduling algorithm class, and created a core algorithm command line parameter. The user can then specify how tasks should be distributed between cores, whether that be randomly or by some other metric (discussed further in section \ref{future-work}). This modular functionality allows easy customisation and fine-tuning of the scheduler's policy to tailor the system's performance to its workload.
 
 Todo: Something about IDT and GDT \\
 Also, all use the same type of  sched algorithm (different instances), created at boot. Could possibly be refactored to have different cores use different policies if there was some desire for that
@@ -442,7 +442,9 @@ It is clear to see that any performance benefit gained was the result of introdu
 \subsection{Experimental Environment} 
 As previously mentioned, the more cores available to InfOS, the better the performance. However, I wanted to compare this performance scaling to a highly-developed and well-established operating system in order to visualise how efficiently InfOS uses the additional available resources. To do this, I ported the Mandelbrot benchmark into a Linux version. Since the pixels may be computed out of order, the original Mandelbrot benchmark displays the output to the terminal correctly by allowing each thread to specify exactly which $(x,y)$ point to print which colour to. There is no way to do this in standard C++ without writing additional complex functionality, so the benchmark was modified to save the pixel value to a global two-dimensional array, rather than printing the value to the screen. I controlled the number of threads by creating pthreads, and I controlled the number of cores by affining those threads to a CPU set: so in the single core case, all threads were affined to a singleton CPU set, in the dual core case, all threads were affined to a CPU set containing two cores, and so on.
 
-I then reran the same core and thread configurations as in table \ref{mb-benchmark-results} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{mb-benchmark-results}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-scalability-infos} and \ref{timing-scalability-linux}.
+% In order to ensure fairness, the frequency of InfOS was changed from 100Hz to 250Hz, to match Linux's value. 
+
+I then reran the same core and thread configurations as in table \ref{mb-benchmark-results} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{mb-benchmark-results}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-scalability-infos} and \ref{timing-scalability-linux}.
 
 \subsection{Results}
 
@@ -490,7 +492,7 @@ Cores &Threads &Average (s) \\
 4 &32 &2.451 \\
 \bottomrule
 \end{tabular}
-\caption{Average time taken in seconds for InfOS to execute the scalability benchmark with varying numbers of cores and threads}\label{timing-scalability-infos}
+\caption{Average time taken in seconds for \textbf{InfOS} to execute the scalability benchmark with varying numbers of cores and threads}\label{timing-scalability-infos}
 }
 \hfill
 \parbox{.45\linewidth}{
@@ -527,7 +529,7 @@ Cores &Threads &Average (s) \\
 4 &32 &2.426 \\
 \bottomrule
 \end{tabular}
-\caption{Average time taken in seconds for Linux to execute the scalability benchmark with varying numbers of cores and threads}\label{timing-scalability-linux}
+\caption{Average time taken in seconds for \textbf{Linux} to execute the scalability benchmark with varying numbers of cores and threads}\label{timing-scalability-linux}
 }
 \end{table}
 
@@ -581,30 +583,48 @@ Cores & Threads & InfOS & Linux \\
     \label{scalability-graph}
 \end{figure}
 
-\section{Conclusion}
-todo: Implementation comparison with Linux - main differences is processes \& threads vs tasks, modulariation of scheduling policies is the same, but core load balancing policies is monolithic in linux. Oh and ours is nice and OO and C++ and pretty (sorry linus). Will do this once implementation is written. Then compare performance \\
+\chapter{Conclusion}
+\section{Discussion}
+This project aimed to provide three key contributions, as discussed in section \ref{key-contributions}:
+\begin{description}
+    \item [Teaching contributions.] A well-designed, object-oriented multicore operating system that can be easily understood by students. \textbf{Achieved}.
+    \item [Technical contributions.] A working operating system implementation that can be booted on real hardware. \textbf{Achieved}.
+    \item [Research contributions. ] A platform on which to build further research and experiment with performance optimisations. \textbf{Achieved}.
+\end{description}
 
-Main discussion: did we achieve our initial goals? Yes, it's nicely designed and achieves same performance as Linux. But also, we have a lovely modular scheduler instead of a monolithic one. Allows easy experiemntation with different policies, which then leads on nicely to future work, cache-aware scheduling stuff
+\subsection{Teaching contributions}
+As with the rest of InfOS, the multicore implementation was designed specifically with structure and readability in mind. The original boot code was a series of initialisation function calls for different subsystems, e.g. \verb|mm_init| initialises the memory management subsystem before \verb|acpi_init| parses the ACPI tables. I extended this, defining a function \verb|cpu_init| and calling that within the original boot code. This makes it clear for students to see at what point during the operating system boot process the multicore initialisation is done.
 
-Also, going to publish this. Merge the changes into infos repo, used for next year's cw
+The C++ language's object-oriented support provided flexibility when modelling the multiple cores. As discussed in section \ref{implementation}, the cores, LAPICs, LAPICTimers, schedulers and scheduling manager are modelled as subclasses of the device object. The global device manager object provides central access to all other devices in the system, and devices communicate by calling methods on other device objects. For example, cores send interprocessor interrupts by calling the \verb|send_remote_sipi| function defined within the LAPIC class on their LAPIC instance. Recall from section \ref{initialising-cores} that within \verb|cpu_init|, the function \verb|start_core| contains the general procedure for waking each core. This is called on every core object in the system, making the generic waking code simple to understand. Also recall from section \ref{calibrating-timers} that all calibration code is defined within the core class, in methods such as \verb|lapic_init| and \verb|timer_init|, making the AP calibration code itself very short and readable: simply a series of calls on the AP object to these initialisation functions. This modular structure makes the entire multicore initialisation control flow path very easy to follow throughout the system.
 
-\chapter{Future Work} \label{future-work}
-\section{Cache-aware scheduling}
+InfOS also models processes and threads as distinct objects, similar to the way in which they are taught, as opposed to the Linux implementation, which doesn't differentiate between the two. Within InfOS, processes have a private address space and one or more threads, whereas threads have an associated context but share the address space of their process parent. This makes the conceptual difference between the two explicit and aids students in learning the key concepts, which can then be generalised to other operating system implementations. Recall that the scheduler works with scheduling entity objects, which are currently threads. However, section \ref{scheduling-threads} noted that processes could easily extend the scheduling entity class, allowing the programmer to change InfOS's unit of work from threads to processes, or perhaps both. This separation of the concepts again helps the student to understand the underlying theory, without being too focused on one specific operating system's implementation. The design choices discussed have not been detrimental to performance either, as evidenced by the scalability comparison in section \ref{mb-mod-benchmark}: InfOS achieves the same percentage performance improvement with additional cores as Linux does. This project has therefore achieved the goal of producing a teaching operating system with simple, readable, modular code, that still accurately represents the behaviour of larger operating systems.
 
-\section{Load Balancing Benchmark} \label{cache-benchmark}
+\subsection{Technical contributions}
+The multicore implementation will be made open-source and merged into the public InfOS GitHub repository \cite{infos}. It will be used for the next iteration of the UG3 Operating Systems course, and it is also freely accessible to the public. It is available to view, modify and run, either in an emulator like Qemu \cite{qemu}, or on real hardware by booting from a USB drive.
 
-
+\subsection{Research contributions}
 I would expect to see better? ....... led me to do further experiments? We achieved our goals here, but this gives way to future work?
+
+While Linux's scheduler is modular in the sense that it allows selection between different scheduling policies such as first-in-first-out or round-robin, it has a monolithic load balancing policy applied uniformly to all tasks and cores in the system. InfOS takes this a step further, and allows both modular selection of the scheduling policy, and also modular selection of the load balancing algorithm, providing flexibility for different workloads. 
+
+Allows easy experiemntation with different policies, which then leads on nicely to future work, cache-aware scheduling stuff
+
+
+
+
+
+\section{Future Work} \label{future-work}
+todo: add in papers tom mentioned
+
+
+talk about research indicating that there is different approaches to load balancing, we have a modular scheduler
+Basically we now have a research platform to experiment intelligent scheduling approaches with
+
 Note to Tom: this section needs reworking but I think it can be used in some form. I could either: \\
 Run some basic experiments to show that the the load balancing and affinity are basically the same, and random is terrible. Can then say that would like to create a better benchmark with more varied workload (e.g. get sleeps working) and see how load balancing and cache affinity differ, right now load balancing gives cache afinity for free, wanna experiment, etc etc \\
 
 or:
 Describe the experimental set up and say we didn't quite get it working in time but for future work we would want to test on this type of benchmark... might be more interesting than just some basic results? Could in fact take this whole discussion about affinity and load bal (all of section 4.4) and move it down to the future work section, after the conclusion... would then lead nicely into future work?
-
-\subsection{Experimental Environment}
-As well as investigating how performance scaled with added resources, I wanted to evaluate the impact of different workload management on performance. Recall that section \ref{scheduling-challenges} discussed that after a thread has been running on a specific core, that core's private cache will hold relevant data to that thread. An increased number of cache hits leads to better performance, so the thread is said to have an affinity for that core. Section \ref{scheduling-challenges} also discussed the issue of keeping the workload balanced between cores, such that no one core is sitting idle while other cores are overwhelmed. With a system-wide ready queue, the load would have been naturally balanced, and with a per-core ready queue, the affinity problem would have been solved for free. However, as discussed in section \ref{scheduling-threads}, I chose to take a hybrid approach, having a global scheduling manager dispatch threads to particular cores. When a thread blocks and then becomes ready again, it goes back to the global scheduling manager, who may choose to dispatch it to a different core to resume execution. This hybrid approach allowed more flexibility for experimenting with different approaches and evaluating the impact of load balancing and processor affinity on performance. \\
-
-InfOS already supported choosing the individual scheduling policy (e.g. round-robin, first-in-first-out) via the command line, but this only concerned each core's individual scheduler. For example, consider a system with two cores running three threads: T1 and T2 on core 1, and T3 on core 2. If the scheduling policy was set to round-robin at boot time, the cores would schedule their own threads according to that policy, so core 1 would execute T1, T2, T1, T2 and so on, and core 2 would execute T3 only. If another thread, T4, were to be created, the global scheduling manager may now choose to dispatch T4 to either core 1 or core 2. Dispatching T4 to core 2 may seem like the natural choice to keep the workload balanced, but if T4 had previously been executing on core 1 and had data cached there, the performance benefit gained by using the warm cache may outweigh the imbalanced workload. This benchmark is interested in these decisions made by the global scheduling manager and their impact on performance, but not in the scheduling policies used by the individual cores. For the avoidance of doubt, I will refer to the former as ``core migration policy", and the latter as ``scheduling policy". In order to vary the parameters, I added another command line parameter that selected from one of three core migration policy implementations.
 
 \begin{description}
 \item[Random.] Uses the \verb|rdrand| instruction to read a random value and takes this number modulo the number of cores available to the system. Uses this number as an index into the list of cores available.
@@ -615,17 +635,10 @@ InfOS already supported choosing the individual scheduling policy (e.g. round-ro
 
 I then needed to test these different policies on a program involving lots of thread migration and lots of cache accesses. I wrote a benchmark loosely inspired by the Bitcoin proof-of-work algorithm \cite{proof-of-work}, which has a global integer array and a number of threads. Each thread is allocated one section of the array and must repeatedly compute the hash of this section, where the hash is essentially the sum of the elements in the section with some salt value. The salt is incremented on every iteration, which increases the sum until the hash exceeds a certain value. Dividing the array between the threads and requiring repeated calculation of the sum means that each thread is repeatedly accessing the same data, which would benefit from being in the core's private cache. In order to simulate blocking for I/O or waiting for some other event, after each calculation, the thread calls yield to stop executing on the current CPU and return to the global scheduling manager, who can then decide which core to dispatch the task to. This benchmark means that each thread is essentially accessing the same data repeatedly, but potentially migrating between cores and losing access to cached data. \\
 
-\subsection{Results}
-todo: actually run these experiments lol.\\
+\subsubsection{Experimental Environment}
+As well as investigating how performance scaled with added resources, I wanted to evaluate the impact of different workload management on performance. Recall that section \ref{scheduling-challenges} discussed that after a thread has been running on a specific core, that core's private cache will hold relevant data to that thread. An increased number of cache hits leads to better performance, so the thread is said to have an affinity for that core. Section \ref{scheduling-challenges} also discussed the issue of keeping the workload balanced between cores, such that no one core is sitting idle while other cores are overwhelmed. With a system-wide ready queue, the load would have been naturally balanced, and with a per-core ready queue, the affinity problem would have been solved for free. However, as discussed in section \ref{scheduling-threads}, I chose to take a hybrid approach, having a global scheduling manager dispatch threads to particular cores. When a thread blocks and then becomes ready again, it goes back to the global scheduling manager, who may choose to dispatch it to a different core to resume execution. This hybrid approach allowed more flexibility for experimenting with different approaches and evaluating the impact of load balancing and processor affinity on performance. \\
 
-Or, just discuss what experiment we would do as future work? Not sure
-todo: add in papers tom mentioned
-Basically we now have a research platform to experiment intelligent scheduling approaches with
-
-\section{Floating Point}
-maybe remove
-
-\chapter{Conclusions}
+InfOS already supported choosing the individual scheduling policy (e.g. round-robin, first-in-first-out) via the command line, but this only concerned each core's individual scheduler. For example, consider a system with two cores running three threads: T1 and T2 on core 1, and T3 on core 2. If the scheduling policy was set to round-robin at boot time, the cores would schedule their own threads according to that policy, so core 1 would execute T1, T2, T1, T2 and so on, and core 2 would execute T3 only. If another thread, T4, were to be created, the global scheduling manager may now choose to dispatch T4 to either core 1 or core 2. Dispatching T4 to core 2 may seem like the natural choice to keep the workload balanced, but if T4 had previously been executing on core 1 and had data cached there, the performance benefit gained by using the warm cache may outweigh the imbalanced workload. This benchmark is interested in these decisions made by the global scheduling manager and their impact on performance, but not in the scheduling policies used by the individual cores. For the avoidance of doubt, I will refer to the former as ``core migration policy", and the latter as ``scheduling policy". In order to vary the parameters, I added another command line parameter that selected from one of three core migration policy implementations.
 
 \section{Final Reminder}
 
