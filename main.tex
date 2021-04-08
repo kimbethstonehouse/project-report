@@ -8,6 +8,8 @@
 \usepackage{hyperref, csquotes}
 \usepackage{graphicx}
 \usepackage{booktabs, multirow}
+\usepackage[font={footnotesize,serif}]{caption}
+
 \graphicspath{ {./figures/} }
 
 \begin{document}
@@ -24,76 +26,39 @@
 \date{\today}
 
 \abstract{
-This skeleton demonstrates how to use the \texttt{infthesis} style for
-undergraduate dissertations in the School of Informatics. It also emphasises the
-page limit, and that you must not deviate from the required style.
-The file \texttt{skeleton.tex} generates this document and can be used as a
-starting point for your thesis. The abstract should summarise your report and
-fit in the space on the first page.
+Multicore architectures are pervasive within the computing industry and students must have a good understanding of the related theoretical concepts. However, prominent open-source operating systems such as Linux are extremely complex to understand. Furthermore, the monolithic nature of such operating system schedulers make experimenting and researching new scheduling approaches almost impossible. This project solves that problem by adding multicore processing support to a research operating system, InfOS. By redesigning InfOS specifically with multicore processing in mind, we produce a well-structured, clean codebase that can be used as a valuable teaching tool to help undergraduate students grasp multicore concepts. Furthermore, we produce a research platform for investigating intelligent scheduling approaches, and provide suggestions for a future research paper on cache-aware scheduling.
 }
 
 \maketitle
 
 \section*{Acknowledgements}
-Acknowledgements go here. 
+I owe my achievements to a great many people.
+
+To my supervisor, Dr Tom Spink, for his unparalleled and tireless support throughout this entire project, particularly when the cores were misbehaving. Additionally, for his enthusiasm for systems research that inspired me to pursue a PhD.
+
+To my incredible friends Jen and George, who have provided unwavering support throughout some very challenging times. It most certainly would not have been possible without you.
+
+To my truly remarkable flatmates, Sarah and Orlagh, for their constant positivity, enthusiasm and being an endless source of laughter.
+
+Lastly, to my wonderful family for their support during my time at university and their encouragement to continue to postgraduate study.
 
 \tableofcontents
 \end{preliminary}
 
 \chapter{Introduction}
+For decades, Moore’s law scaling has predicted exponential advancements in computing performance. However, with Moore’s law coming to an end and power consumption becoming an increasingly constraining factor, chip makers have turned to multicore architectures. A multicore processor has two or more processing units, or cores, on the same chip, and can provide performance increases without excessive power consumption. In 2001, IBM released the POWER4, the industry’s first server chip with two cores \cite{power4}, then in 2005 came the Athlon 64 X2, AMD’s first desktop dual-core processor. Today, the multicore trend shows no signs of slowing down. The Sunway TaihuLight supercomputer has 256 cores per processor chip, amounting to over 10 million cores across the entire system \cite{sunway}. With multicore architectures being so pervasive in computing, it is especially important for students to develop a good understanding before entering the industry. However, this is not an easy concept to grasp, and parallel programming is challenging. Expert programmers must explicitly divide tasks into threads that can be run concurrently and avoid synchronisation issues while doing so \cite{geer}. 
 
-The preliminary material of your report should contain:
-\begin{itemize}
-\item
-The title page.
-\item
-An abstract page.
-\item
-Optionally an acknowledgements page.
-\item
-The table of contents.
-\end{itemize}
+It is possible that the operating system could simplify the programmer's task by presenting a clean, well-structured, multicore interface. However, most operating systems do not. In fact, most modern operating systems are extremely complex and difficult to understand. For example, the Linux kernel has evolved over a period of thirty years into a project comprising over 27.8 million lines of code \cite{linux-loc} with around six thousand developers \cite{linux-kernel}. While the open-source nature of Linux makes it a good educational resource, with all source code being publicly available on GitHub \cite{linux-github}, the large and complex nature of the project makes it almost impossible for a novice programmer to understand. The code is not particularly readable, and demands a good mastery of low-level technical concepts such as pointers. In essence, while being a freely-accessible example of an established operating system, Linux is not particularly useful as a teaching tool. 
 
-As in this example \texttt{skeleton.tex}, the above material should be
-included between:
-\begin{verbatim}
-\begin{preliminary}
-    ...
-\end{preliminary}
-\end{verbatim}
-This style file uses roman numeral page numbers for the preliminary material.
+Furthermore, as researchers search for further performance improvements, new scheduling policies have been developed to utilise system resources efficiently \cite{wasted-cores}. However, these policies rarely make their way into production operating systems, due to the complexity of modifying such a large codebase without introducing bugs. Researchers propose that a modular scheduler could offer a solution, considering a multitude of factors such as resource contention, cache usage and workload balancing among cores. However, the monolithic design of operating systems makes extensibility impractical. Once an operating system is established, a modular redesign is not a feasible option. For example, the cost of redeveloping Linux was estimated in 2011 at \$3 billion USD \cite{linux-kernel-cost}, and again in 2018 at \$14.7 billion USD \cite{cost-to-redev}. 
 
-The main content of the dissertation, starting with the first chapter,
-starts with page~1. \emph{\textbf{The main content must not go beyond page~40.}}
+InfOS \cite{infos} is a research operating system that can provide a solution. InfOS was written entirely from scratch in C++ following an object-oriented design, and was designed precisely because modern operating system kernels like the Linux kernel are extremely complex and difficult to understand. It is a valuable teaching tool that is used to help undergraduate students to develop their understanding of operating system internals. InfOS currently only supports single core processing, but being relatively lightweight in comparison to large-scale and long-lived operating systems, InfOS presents a rare opportunity to redesign an operating system specifically with multicore processing in mind. The object-oriented design of InfOS will extend naturally to support multicore processing in a well-structured manner, and adding this support will develop InfOS further as a teaching tool. This can also provide research advantages, since the scheduler can be designed in a modular way that allows experimenting with new scheduling policies easily. The aim of this project is to provide the following key contributions:
 
-The report then contains a bibliography and any appendices, which may go beyond
-page~40. The appendices are only for any supporting material that's important to
-go on record. However, you cannot assume markers of dissertations will read them.
-
-You may not change the dissertation format (e.g., reduce the font size, change
-the margins, or reduce the line spacing from the default 1.5 spacing). Be
-careful if you copy-paste packages into your document preamble from elsewhere.
-Some \LaTeX{} packages such as \texttt{geometry}, \texttt{fullpage}, or
-\texttt{savetrees} change the margins of your document. Do not include them!
-
-Over length or incorrectly-formatted dissertations will not be accepted and you
-would have to modify your dissertation and resubmit. You cannot assume we will
-check your submission before the final deadline and if it requires resubmission
-after the deadline to conform to the page and style requirements you will be
-subject to the usual late penalties based on your final submission time.
-
-\section{Using Sections}
-
-Divide your chapters into sub-parts as appropriate.
-
-\section{Citations}
-
-Citations (such as \cite{P1} or \cite{P2}) can be generated using
-\texttt{BibTeX}. For more advanced usage, the \texttt{natbib} package is
-recommended. You could also consider the newer \texttt{biblatex} system.
-
-These examples use a numerical citation style. You may also use
-(Author, Date) format if you prefer.
+\begin{description}
+    \item [Teaching contributions.] A well-designed, object-oriented multicore operating system that can be easily understood by students.
+    \item [Technical contributions.] A working operating system implementation that can be booted on real hardware.
+    \item [Research contributions. ] A platform on which to build further research and experiment with performance optimisations.
+\end{description}
 
 \chapter{Background}
 
@@ -134,7 +99,7 @@ Even with a multiple processor standard, there still remains the issue of how to
 
 Heterogeneous architectures can offer improved performance. To fully exploit the benefits of multicore processing, software must be highly adapted to a parallel execution environment (discussed further in section \ref{scalability-challenges}). The programmer's effort to parallelise the program can be reduced if the underlying architecture promises faster execution of the serial part of an application \cite{suleman_2007}. Consider, for example, a system with many simple cores to provide high parallelisation, and a few complex cores to ensure high serial performance too \cite{balakrishnan_2005}. 
 
-Core diversity can also offer a greater ability to adapt to the demands of different applications, and running each application on the most appropriate core can increase energy efficiency \cite{kumar_2003}. One notable example is the Arm big.LITTLE architecture \cite{big.little}, which uses two types of processor. “LITTLE” processors are designed for maximum power efficiency, whereas “big” processors are designed for maximum compute performance. The big.LITTLE architecture is well suited to mobile devices such as smartphones and tablets, since it is able to adjust to a dynamic usage pattern of processing intensity while preserving battery life. Furthermore, with a heterogeneous architecture, cores may even implement different ISAs. A multiple-ISA heterogeneous architecture has the potential to outperform the best single-ISA heterogeneous architecture by as much as 21\%, while offering a 23\% energy saving \cite{venkat_2014}. However, while the benefits of heterogeneous architectures can clearly be seen, they complicate matters for the operating system designer.
+Core diversity can also offer a greater ability to adapt to the demands of different applications, and running each application on the most appropriate core can increase energy efficiency \cite{kumar_2003}. One notable example is the Arm big.LITTLE architecture \cite{big.little}, which uses two types of processor. “LITTLE” processors are designed for maximum power efficiency, whereas “big” processors are designed for maximum compute performance. The big.LITTLE architecture is well suited to mobile devices such as smartphones and tablets, since it is able to adjust to a dynamic usage pattern of processing intensity while preserving battery life. Furthermore, with a heterogeneous architecture, cores may even implement different ISAs. A multiple-ISA heterogeneous architecture has the potential to outperform the best single-ISA heterogeneous architecture by as much as 21\%, while offering a 23\% energy saving \cite{venkat_2014}. The Arm Thumb instruction set is a subset of the most commonly used 32-bit Arm instructions, with every 16-bit Thumb instruction having a corresponding 32-bit Arm instruction, allowing the processor to switch between the two instruction sets during execution. This provides a concrete example of a multiple-ISA heterogeneous architecture, where both traditional Arm and Arm Thumb are supported, and cores may be operating in different modes at any given time. However, while the benefits of heterogeneous architectures can clearly be seen, they complicate matters for the operating system designer.
 
 \subsection{Processes and Threads} 
 \label{processes-threads}
@@ -187,7 +152,7 @@ This may lead to the rather pessimistic view that an investment in multicore pro
 While the performance benefits of multicore processing are clear, the transition from unicore processing to multicore processing presented a challenge for already established operating systems. Many optimisations, such as caching frequent values to accelerate computation, had already been found for unicore operating systems. The challenge was to migrate large systems to multicore processing while retaining those optimisations. This section discusses the main approaches taken, and identifies opportunities to develop the field further.
 
 \subsection{Linux}
-The most prominent open-source operating system is Linux. Within Linux, all activity occurs within the context of a process. Linux does not distinguish between processes and threads, referring to them collectively as tasks. This is possible due to the \verb|clone()| system call, which creates a new task and allows the caller to specify resources to be shared between the parent and child task. The routine \verb|fork()| is a special case of the \verb|clone()| system call, that requests all subcontexts to be copied. The routine \verb|fork()| is often used to create a new task, before the \verb|exec()| system call is used to start a new program running within that task \cite{silberschatz}. Tasks can be classified differently depending on their nature; real time tasks must be responded to within a strict timeframe, whereas normal tasks do not \cite{seeker}. Linux supports preemptive scheduling, meaning that the scheduler decides which task runs and when. The aim is to balance fairness and performance across a variety of workloads, which is not a trivial task (discussed further in section \ref{transition-to-multicore}). Naturally the different types of task require different scheduling approaches, so the Linux scheduler is modular. Each different scheduling algorithm is wrapped in a scheduling class, offering an interface to the main scheduler \cite{seeker} and allowing the scheduling policy to be changed. 
+The most prominent open-source operating system is Linux. Within Linux, all activity occurs within the context of a process. Linux does not distinguish between processes and threads, referring to them collectively as tasks. This is possible due to the \verb|clone()| system call, which creates a new task and allows the caller to specify resources to be shared between the parent and child task. The routine \verb|fork()| is a special case of the \verb|clone()| system call, that requests all subcontexts to be copied. Often, the routine \verb|fork()| is used to create a new task, before the \verb|exec()| system call is used to start a new program running within that task \cite{silberschatz}. Tasks can be classified differently depending on their nature; real time tasks must be responded to within a strict timeframe, whereas normal tasks do not \cite{seeker}. Linux supports preemptive scheduling, meaning that the scheduler decides which task runs and when. The aim is to balance fairness and performance across a variety of workloads, which is not a trivial task (discussed further in section \ref{transition-to-multicore}). Naturally the different types of task require different scheduling approaches, so the Linux scheduler is modular. Each different scheduling algorithm is wrapped in a scheduling class, offering an interface to the main scheduler \cite{seeker} and allowing the scheduling policy to be changed. 
 
 Normal tasks are handled by the Completely Fair Scheduler (CFS), which aims to multiplex the processing resources fairly between tasks. Rather than allocating each task a static time slice like earlier versions of the scheduler did, CFS allocates each task a proportion of the processor's time. Each task is assigned a nice value, ranging from -20 to 19, indicating the task's priority. The higher the nice value, the lower the task's priority, such that decreasing your priority increases how nice you are being to the rest of the system. Each task's proportion of the processor time is also weighted by nice value. This means that a task's time slice depends on the total number of runnable threads and their priorities, which is particularly good for interactive workloads. Real time tasks are handled differently. They have a priority ranging from 1 to 99, again with a smaller number representing a higher priority. While the Linux kernel usually meets the real-time deadlines, the scheduling approach is a soft one, meaning that no guarantees are provided on how quickly a real time thread will be scheduled after becoming runnable \cite{silberschatz}. The real time scheduler can operate in two modes, first-in-first-out (FIFO) or round-robin (RR). FIFO schedules a task until it terminates, whereas RR schedules each task for a fixed time slice and preempts that task for either a higher-priority task, or a task of the same priority if the time slice has expired \cite{seeker}.
 
@@ -216,7 +181,7 @@ Linus Torvalds began writing the Linux kernel in 1991, and since then, the proje
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.3]{figures/linux-loc.png}
+    \includegraphics[scale=0.28]{figures/linux-loc.png}
     \caption{Lines of code in each version of the Linux kernel \cite{kernel-stats}}
     \label{linux-growth}
 \end{figure}
@@ -245,14 +210,14 @@ InfOS currently only supports single core processing, but being relatively light
 
 \chapter{Implementation} \label{implementation}
 
-\section{Existing system} \label{existing-system}
+\section{Existing System} \label{existing-system}
 As described in section \ref{motivation}, InfOS has a clear advantage over other operating systems because it was designed to be straightforward to understand. With this being said, InfOS is still a general purpose operating system, and the whole repository comprises around 20,000 lines of code. Before implementation could begin, the major conceptual challenge was to understand the existing system. There is a brief specification document \cite{os-cw-spec} written by the designer, which is aimed at students of the UG3 operating systems course and explains InfOS’s high-level structure and implementation, but it is by no means extensive technical documentation. Most of my understanding of InfOS therefore came from navigating the existing codebase and reading the Intel architecture manuals \cite{intel-full-manual}. This consumed a significant portion of development time throughout the entire project. Another conceptual challenge was that the C++ standard library was unavailable, meaning that the entire implementation had to be written in the C++ core language \cite{cpp-core}. This is because the standard library implementation makes use of syscalls, and therefore must be ported to each individual operating system. Naturally, no such port exists for InfOS, so functionality including strings, lists, maps, input/output, random number generation, atomics support and time utilities were not supported. While InfOS does already implement its own versions of string, list and map, any other standard C++ functionality needed during the implementation had to be written from scratch. This became particularly relevant when atomic operations were needed (see section \ref{scheduling-threads} for further details).
  
 The Advanced Programmable Interrupt Controller (APIC) \cite{intel-sys-prog-guide} is the Intel standard for processors, and InfOS is an APIC-based system. The standard defines two main controllers, a local APIC (LAPIC) and an external input/output APIC (I/O APIC). The I/O APIC is responsible for receiving external I/O interrupts, such as keyboard strokes, and relaying them to the LAPIC. Each LAPIC has an LAPICTimer, and the LAPIC is responsible for receiving internal I/O interrupts such as LAPICTimer interrupts, alongside the I/O APIC generated interrupts. APIC supports multiprocessor systems by representing each processor as a core and an LAPIC, with each LAPIC handling core-specific interrupts. With this representation, the system has one I/O APIC, and as many LAPICs and LAPICTimers as there are cores. Figure \ref{cores-lapics} shows an example in the case of a quad-core system. The cores may communicate by sending Inter-processor Interrupts (IPIs) from their LAPIC to another processor’s LAPIC \cite{intel-sys-prog-guide}. 
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.4]{figures/cores-lapics.pdf}
+    \includegraphics[scale=0.6]{figures/cores-lapics.pdf}
     \caption{Block diagram showing the cores and APICs in a quad-core system}
     \label{cores-lapics}
 \end{figure}
@@ -297,7 +262,7 @@ As already discussed, the object-oriented design of InfOS extends well to suppor
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{figures/state-flowchart.pdf}
+    \includegraphics[scale=0.6]{figures/state-flowchart.pdf}
     \caption{Flowchart depicting the process of parsing MADT entries and creating core objects}
     \label{state-flowchart}
 \end{figure}
@@ -307,7 +272,7 @@ Once the APs have been detected, they need to be triggered to begin execution. T
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.5]{figures/init-sipi-sipi.pdf}
+    \includegraphics[scale=0.6]{figures/init-sipi-sipi.pdf}
     \caption{Flowchart depicting the INIT-SIPI-SIPI sequence for waking each core}
     \label{init-sipi-sipi}
 \end{figure}
@@ -351,7 +316,7 @@ There was one global scheduler object with a reference to a scheduling algorithm
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.6]{figures/schedulers.pdf}
+    \includegraphics[scale=0.7]{figures/schedulers.pdf}
     \caption{Figure depicting the scheduler components within unicore InfOS}
     \label{schedulers}
 \end{figure}
@@ -364,8 +329,6 @@ I do this scheduler initialisation as soon as the APs are online and executing c
 
 When a thread was created previously, it would be added to the runqueue of the global scheduler object. With the removal of this object, there needed to be some way for new threads, or threads waking up from sleep, to be scheduled onto some core. I could have just added the thread to the runqueue of whatever core created it, but this would be a really obvious way to create a workload imbalance. When InfOS boots, the shell launches and waits for the user to run a program. The shell thread would likely be running on the BSP core, and then any program that the user launched would also be added to the BSP's runqueue, while all other cores sit idle. The system needs some sort of global scheduling manager to distribute new tasks between cores, and then once a thread is assigned to a core, the core's individual scheduling algorithm can be responsible for distributing that core's cycles between the threads on that core's runqueue.
 
-I created a global scheduling manager class which maintains a list of all schedulers in the system. Figure \ref{multicore-schedulers} shows the scheduler components within a quad-core system. On initialisation, each scheduler now registers itself with the scheduling manager, and this global scheduler list is protected with a mutex lock. When a new thread is created or awoken, the thread is passed to the scheduling manager, who then selects a scheduler and dispatches the task to that scheduler. I chose to mimic the abstraction provided by the scheduling algorithm class, and created a core algorithm command line parameter. The user can then specify how tasks should be distributed between cores, whether that be randomly or by some other metric (discussed further in section \ref{future-work}). This modular functionality allows easy customisation and fine-tuning of the scheduler's policy to tailor the system's performance to its workload.
-
 \begin{figure}[h]
     \centering
     \includegraphics[scale=0.5]{figures/multicore-schedulers.pdf}
@@ -373,8 +336,10 @@ I created a global scheduling manager class which maintains a list of all schedu
     \label{multicore-schedulers}
 \end{figure}
 
-Todo: Something about IDT and GDT \\
-Also, all use the same type of  sched algorithm (different instances), created at boot. Could possibly be refactored to have different cores use different policies if there was some desire for that
+I created a global scheduling manager class which maintains a list of all schedulers in the system. Figure \ref{multicore-schedulers} shows the scheduler components within a quad-core system. On initialisation, each scheduler now registers itself with the scheduling manager, and this global scheduler list is protected with a mutex lock. When a new thread is created or awoken, the thread is passed to the scheduling manager, who then selects a scheduler and dispatches the task to that scheduler. I chose to mimic the abstraction provided by the scheduling algorithm class, and created a core algorithm command line parameter. The user can then specify how tasks should be distributed between cores, whether that be randomly or by some other metric (discussed further in section \ref{future-work}). This modular functionality allows easy customisation and fine-tuning of the scheduler's policy to tailor the system's performance to its workload.
+
+% Todo: Something about IDT and GDT \\
+% Also, all use the same type of  sched algorithm (different instances), created at boot. Could possibly be refactored to have different cores use different policies if there was some desire for that
 
 \chapter{Evaluation}
 As discussed in section \ref{scalability-challenges}, in order to fully exploit the processing power of multiple cores, software needs to be highly adapted to a parallel execution environment. An embarrassingly parallel problem is one where very little effort is needed to divide the original task into a set of almost independent parallel tasks, and such problems are both pervasive in computing and well-suited to exploiting parallel architectures. 
@@ -428,8 +393,12 @@ In order to determine if any performance difference was really caused by introdu
 \subsection{Results} \label{mb-benchmark-results}
 The baseline performance on the Mandelbrot benchmark was 9.143 seconds in the single-core, single-threaded case. The results for the single-core, multithreaded case show that introducing multithreading had very little impact on the execution time. In fact, the execution time actually increased slightly to about 9.4 seconds. This is consistent with my expectations, because the Mandelbrot program involves extensive computation and very little I/O, meaning that the threads are compute-bound. This gives no opportunity to interleave threads while other threads are waiting, so multithreading simply introduces additional overhead with no performance benefit. 
 
-\begin{table}[h]\centering
-\normalsize
+
+\begin{table}[h]
+\begin{minipage}{.3\textwidth}
+\vfill
+\centering
+\scriptsize
 \begin{tabular}{ccc}\toprule
 Cores & Threads & Average time (s) \\
 \midrule
@@ -460,17 +429,23 @@ Cores & Threads & Average time (s) \\
 4 &32 &2.687 \\
 \bottomrule
 \end{tabular}
-\caption{Average time taken in seconds for InfOS to execute the Mandelbrot benchmark with varying numbers of cores and threads}\label{timing-infos-mb}
+\captionof{table}{Average time taken in seconds for InfOS to execute the Mandelbrot benchmark with varying numbers of cores and threads}\label{timing-infos-mb}
+\end{minipage}\hfill\hfill
+\begin{minipage}{0.65\textwidth}
+\centering
+% \begin{figure}[h]
+    
+    \includegraphics[scale=0.3]{figures/mandelbrot-graph.pdf}
+    \captionof{figure}{Number of cores plotted against average time taken for InfOS to execute the Mandelbrot benchmark once the thread count met or exceeded the number of cores}
+    \label{mandelbrot-graph}
+% \end{figure}
+\end{minipage}
 \end{table}
+
 
 In the multicore, multithreaded case, the execution time decreases with each additional core, with the exception of the two cases highlighted in bold. In the case with three cores and two threads, the thread count is not high enough to keep all cores busy. One core must be sat idle at any given point, which is why the performance is at a similar level of the dual core case. Similarly, in the case with four cores and two threads, two cores are sat idle, and the performance is again similar to the dual core case. Again, the results show that increasing the number of threads past the number of cores does not decrease the execution time any further, due to each core already being fully utilised by the compute-bound threads.
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[scale=0.35]{figures/mandelbrot-graph.png}
-    \caption{Number of cores plotted against average time taken for InfOS to execute the Mandelbrot benchmark once the thread count met or exceeded the number of cores}
-    \label{mandelbrot-graph}
-\end{figure}
+
 
 It is clear to see that any performance benefit gained was the result of introducing additional cores to the system. To see the trend, I plotted the number of cores against the average performance once the thread count met or exceeded the number of cores: that is, one core one thread, two cores two threads, three cores four threads and four cores four threads. This plot is shown in figure \ref{mandelbrot-graph}. Clearly, with the introduction of additional cores, the execution time decreases, but the trend is not quite linear. I was interested to learn more about how this scaling compared to how other operating systems utilise additional cores, which led me to run a second benchmark, described in section \ref{mb-mod-benchmark}.
 
@@ -485,21 +460,10 @@ As previously mentioned, the more cores available to InfOS, the better the perfo
 
 I then reran the same core and thread configurations as in table \ref{mb-benchmark-results} on InfOS, but using the modified Mandelbrot benchmark. I also ran this modified Mandelbrot benchmark on Linux, again with the same core configurations as in table \ref{mb-benchmark-results}. I timed the Linux execution using the \verb|time| command, and again, verified this with an external stopwatch to ensure accuracy. This ensured that both operating systems were taking the same number of timer interrupts per second, and therefore had the same interrupt handling overhead. I also manually set the Linux scheduler to be FIFO and gave the threads maximum priority, to ensure they had the best possible chance of executing quickly. This gave the results shown in tables \ref{timing-scalability-infos} and \ref{timing-scalability-linux}.
 
-\subsection{Results}
-
-The InfOS execution times were very similar to the previous benchmark, confirming that the minor functionality changes did not alter the program's behaviour. Making a direct comparison between the results obtained on this benchmark, the Linux execution times were very similar to the InfOS execution times. The operating systems both showed almost identical behaviour to that observed in the previous section, namely:
-
-\begin{enumerate}
-    \item Multithreading in the single-core case did not impact execution time.
-    \item In the case where there were less threads than cores, performance was negatively affected by one or more cores being idle.
-    \item Increasing the number of threads past the number of cores made little further difference to performance.
-    \item With every additional core, the execution time decreased.
-\end{enumerate}
-
 \begin{table}[h]
 \parbox{.45\linewidth}{
 \centering
-\small
+\scriptsize
 \begin{tabular}{ccc}
 \toprule
 Cores &Threads &Average (s) \\
@@ -536,7 +500,7 @@ Cores &Threads &Average (s) \\
 \hfill
 \parbox{.45\linewidth}{
 \centering
-\small
+\scriptsize
 \begin{tabular}{ccc}
 \toprule
 Cores &Threads &Average (s) \\
@@ -572,12 +536,23 @@ Cores &Threads &Average (s) \\
 }
 \end{table}
 
+\subsection{Results}
+
+The InfOS execution times were very similar to the previous benchmark, confirming that the minor functionality changes did not alter the program's behaviour. Making a direct comparison between the results obtained on this benchmark, the Linux execution times were very similar to the InfOS execution times. The operating systems both showed almost identical behaviour to that observed in the previous section, namely:
+
+\begin{enumerate}
+    \item Multithreading in the single-core case did not impact execution time.
+    \item In the case where there were less threads than cores, performance was negatively affected by one or more cores being idle.
+    \item Increasing the number of threads past the number of cores made little further difference to performance.
+    \item With every additional core, the execution time decreased.
+\end{enumerate}
+
 To compare the resource utilisation, we can look at the number of cores against the average performance once the thread count met or exceeded the number of cores for each operating system. This data is extracted and shown in table \ref{timing-scalability-abridged}. From this data, we can calculate the percentage performance increase gained with each additional core relative to the performance without the additional core. That is, we compute the percentage performance increase for two cores relative to the single-core case, with three cores relative to the dual-core case, and so on. These percentages can be seen in table \ref{timing-scalability-percentages}, and figure \ref{scalability-graph} shows this data graphically. We can see that the trend of performance against additional resources is about the same for both InfOS and Linux. That is, when given additional resources, InfOS is able to extract the same performance benefit from them that Linux can, confirming that my multicore implementation accurately represents the way a real operating system would handle multiple cores.
 
 \begin{table}[h]
 \parbox{.45\linewidth}{
 \centering
-\footnotesize
+\scriptsize
 \begin{tabular}{cccc}\toprule
 Cores & Threads & InfOS & Linux \\
 & & average & average \\
@@ -597,7 +572,7 @@ Cores & Threads & InfOS & Linux \\
 \hfill
 \parbox{.45\linewidth}{
 \centering
-\footnotesize
+\scriptsize
 \begin{tabular}{cccc}\toprule
 Cores & Threads & InfOS & Linux \\
 & & performance & performance \\
@@ -616,7 +591,7 @@ Cores & Threads & InfOS & Linux \\
 
 \begin{figure}[h]
     \centering
-    \includegraphics[scale=0.3]{figures/scalability-graph.png}
+    \includegraphics[scale=0.3]{figures/scalability-graph.pdf}
     \caption{Number of cores plotted against average time taken for InfOS and Linux to execute the scalability benchmark once the thread count met or exceeded the number of cores}
     \label{scalability-graph}
 \end{figure}
@@ -630,17 +605,17 @@ This project aimed to provide three key contributions, as discussed in section \
     \item [Research contributions. ] A platform on which to build further research and experiment with performance optimisations.
 \end{description}
 
-\subsection{Teaching contributions}
+\subsection{Teaching Contributions}
 As with the rest of InfOS, the multicore implementation was designed specifically with structure and readability in mind. The original boot code was a series of initialisation function calls for different subsystems, e.g. \verb|mm_init| initialises the memory management subsystem before \verb|acpi_init| parses the ACPI tables. I extended this, defining a function \verb|cpu_init| and calling that within the original boot code. This makes it clear for students to see at what point during the operating system boot process the multicore initialisation is done.
 
 The C++ language's object-oriented support provided flexibility when modelling the multiple cores. As discussed in section \ref{implementation}, the cores, LAPICs, LAPICTimers, schedulers and scheduling manager are modelled as subclasses of the device object. The global device manager object provides central access to all other devices in the system, and devices communicate by calling methods on other device objects. For example, cores send interprocessor interrupts by calling the \verb|send_remote_sipi| function defined within the LAPIC class on their LAPIC instance. Recall from section \ref{initialising-cores} that within \verb|cpu_init|, the function \verb|start_core| contains the general procedure for waking each core. This is called on every core object in the system, making the generic waking code simple to understand. Also recall from section \ref{calibrating-timers} that all calibration code is defined within the core class, in methods such as \verb|lapic_init| and \verb|timer_init|, making the AP calibration code itself very short and readable: simply a series of calls on the AP object to these initialisation functions. This modular structure makes the entire multicore initialisation control flow path very easy to follow throughout the system.
 
 InfOS also models processes and threads as distinct objects, as opposed to Linux's implementation, which doesn't differentiate between the two. Within InfOS, processes have a private address space and one or more threads, whereas threads have an associated context but share the address space of their process parent. This makes the conceptual difference between processes and threads explicit, aiding students in learning the core theoretical concepts, which can then be generalised to other operating system implementations. Recall that the scheduler works with scheduling entity objects, which are currently threads. However, section \ref{scheduling-threads} noted that processes could easily extend the scheduling entity class, allowing the programmer to change InfOS's unit of work from threads to processes, or perhaps both. This separation of the concepts again helps the student to understand the underlying theory, without being too focused on one specific operating system's implementation. The design choices discussed have not been detrimental to performance either, as evidenced by the scalability comparison in section \ref{mb-mod-benchmark}: InfOS achieves the same percentage performance improvement with additional cores as Linux does. This project has therefore achieved the goal of producing a teaching operating system with simple, readable, modular code, that still accurately represents the behaviour of larger operating systems.
 
-\subsection{Technical contributions}
+\subsection{Technical Contributions}
 The multicore implementation will be made open-source and merged into the public InfOS GitHub repository \cite{infos}. It will be used for the next iteration of the UG3 Operating Systems course, and it is also freely accessible to the public. It is available to view, modify and run, either in an emulator like Qemu \cite{qemu}, or on real hardware by booting from a USB drive, achieving the technical contribution.
 
-\subsection{Research contributions}
+\subsection{Research Contributions}
 The scalability comparison in section \ref{mb-mod-benchmark} confirms that my multicore implementation is utilising the cores in a sensible way, but we do not see the near-linear trend that my literature review in section \ref{towards-multicore} suggested was possible. InfOS handles load balancing in a similar way to Linux; however, the literature suggests that Linux's approach to load balancing is sub-optimal, with one study noting several performance bugs that lead to cores sitting idle \cite{wasted-cores}. Recall that the authors of the study suggested that  while ongoing research has discovered promising scheduling algorithms, the monolithic nature of operating system schedulers like Linux's make these algorithms impractical to implement and test without adding significant complexity. The authors suggested that a modular scheduler would allow further research into how different load balancing approaches can be combined to suit different system workloads \cite{wasted-cores}.
 
 InfOS can provide this functionality. While Linux's scheduler is modular in the sense that it allows selection between different scheduling policies such as first-in-first-out or round-robin, it has a monolithic load balancing policy applied uniformly to all tasks and cores in the system. InfOS takes this a step further, allowing both modular selection of the scheduling policy, and also modular selection of the load balancing algorithm, providing flexibility for different workloads. This gives the perfect opportunity for further research into scheduling algorithms that effectively utilise all available processing resources. We have identified a preliminary experimental set up, discussed further in section \ref{future-work}, to give an idea of how InfOS may be used as a platform for future research.
