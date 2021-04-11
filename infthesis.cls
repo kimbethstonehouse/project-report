@@ -600,6 +600,7 @@ Computer Science}}
          {\Large\itshape \@author \par}
          \end{center}
       \end{minipage}\\
+      {\resizebox{30mm}{!}{\includeshield}\\\vfill}
       {\large \@degreetext \par \@submityear \par}
       \ifthenelse{\equal{\@graduationdate}{}}{}
          {\vskip 1cm {\large \ttfamily (Graduation date: \@graduationdate)}}
